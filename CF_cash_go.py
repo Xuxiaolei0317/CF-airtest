@@ -1,5 +1,5 @@
 # -*- encoding=utf8 -*-
-__author__ = "Administrator"
+__author__ = "Xiaolei"
 
 from datetime import datetime
 from airtest.core.api import *
@@ -16,9 +16,9 @@ android = Android()
 # ST.SAVE_IMAGE = False # 关
 
 if not cli_setup():
-    auto_setup(__file__, logdir=True, devices=["Android:///127.0.0.1:7555",])
+#     auto_setup(__file__, logdir=True, devices=["Android:///127.0.0.1:7555",])
     # auto_setup(__file__, logdir=True, devices=["Android://127.0.0.1:5037/d8c92411",])
-    # auto_setup(__file__, logdir=True, devices=["android://127.0.0.1:5037/R5CW203G5VF?cap_method=MINICAP&touch_method=MAXTOUCH&",])
+    auto_setup(__file__, logdir=True, devices=["android://127.0.0.1:5037/R5CW203G5VF?cap_method=MINICAP&touch_method=MAXTOUCH&",])
 
     
 btn_close = poco("btn_close") # 活动关闭按钮
@@ -31,10 +31,10 @@ deal_btn_1 = poco("deal_btn_1") # deal入口
 btnBuild = poco("btnBuild") # cash go 建造按钮
 shop_img17 = poco("shop_img17") # coins OOC 弹窗
 slot_coins_img2 = poco("spAdd") # 顶部 coins icon
-slot_coins = Template(r"tpl1689661044665.png", record_pos=(-0.407, -0.906), resolution=(1080, 2316))
+slot_coins = Template(r"tpl1689661026884.png", record_pos=(-0.407, -0.906), resolution=(1080, 2316))
 
 
-cg_shop_coins_9999 = poco("bflPrice",type="TextBMFont",text="199") # cash go 商店 coins 9999档
+cg_shop_coins_9999 = poco("bflPrice",type="TextBMFont",text="9,999") # cash go 商店 coins 9999档
 btnBuy = poco("btnBuy") # 购买按钮
 prize_lbl1 = poco("prize_lbl1") # 收奖确认点击
 btnCollect = poco("btnCollect") # 领奖按钮
@@ -68,23 +68,37 @@ def cash_go_build_ooc():
     sleep(1)
     if_click(prize_lbl1) # 领奖
     sleep(1)
+    if_click(cg_shop_coins_9999) # 点击金币9999档
+    sleep(1)
+    if_click(btnBuy) # 点击购买
+    sleep(1)
+    if_click(prize_lbl1) # 领奖
+    sleep(1)
+    if_click(cg_shop_coins_9999) # 点击金币9999档
+    sleep(1)
+    if_click(btnBuy) # 点击购买
+    sleep(1)
+    if_click(prize_lbl1) # 领奖
+    sleep(1)
     if_click(cg_build) # 点击build页签返回建造界面，此处用的build的红点定位的
     
         
 print("==== start ====")
-
-while True:
-    if if_click(btnCollect):
-        if_click(btnCollect)
-        if_click(prize_lbl1)
-        sleep(6)
-        log("小岛升级")
-    elif if_click(shop_img17):
-        cash_go_build_ooc()
-        continue
-    else:
-        if_click(btnBuild)
+if __name__ == '__main__':
+    while True:
+        if if_click(btnCollect):
+            if_click(btnCollect)
+            if_click(prize_lbl1)
+            sleep(6)
+            log("小岛升级")
+        elif if_click(shop_img17):
+            cash_go_build_ooc()
+            continue
+        else:
+            ST.SAVE_IMAGE = True # 开
+            if_click(btnBuild)
 
 # adb_screenshot()
+
 
 
