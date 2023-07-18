@@ -20,3 +20,5 @@ if not cli_setup():
     # auto_setup(__file__, logdir=True, devices=["Android:///127.0.0.1:7555",])
     # auto_setup(__file__, logdir=True, devices=["Android://127.0.0.1:5037/d8c92411",])
     # auto_setup(__file__, logdir=True, devices=["android://127.0.0.1:5037/R5CW203G5VF?cap_method=MINICAP&touch_method=MAXTOUCH&",])
+    
+
