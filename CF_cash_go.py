@@ -16,9 +16,10 @@ android = Android()
 # ST.SAVE_IMAGE = False # 关
 
 if not cli_setup():
-#     auto_setup(__file__, logdir=True, devices=["Android:///127.0.0.1:7555",])
+    auto_setup(__file__, logdir=True, devices=["Android:///",])
+    # auto_setup(__file__, logdir=True, devices=["Android:///127.0.0.1:7555",])
     # auto_setup(__file__, logdir=True, devices=["Android://127.0.0.1:5037/d8c92411",])
-    auto_setup(__file__, logdir=True, devices=["android://127.0.0.1:5037/R5CW203G5VF?cap_method=MINICAP&touch_method=MAXTOUCH&",])
+    # auto_setup(__file__, logdir=True, devices=["android://127.0.0.1:5037/R5CW203G5VF?cap_method=MINICAP&touch_method=MAXTOUCH&",])
 
     
 btn_close = poco("btn_close") # 活动关闭按钮
@@ -63,6 +64,7 @@ def cash_go_build_ooc():
     touch(slot_coins) # 点击右上角+号按钮，跳转商店
     sleep(1)
     if_click(cg_shop_coins_9999) # 点击金币9999档
+    cg_shop_coins_9999.get_text()
     sleep(1)
     if_click(btnBuy) # 点击购买
     sleep(1)
