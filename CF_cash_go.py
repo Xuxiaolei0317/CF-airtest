@@ -31,9 +31,10 @@ deal_btn_1 = poco("deal_btn_1") # deal入口
 btnBuild = poco("btnBuild") # cash go 建造按钮
 shop_img17 = poco("shop_img17") # coins OOC 弹窗
 slot_coins_img2 = poco("spAdd") # 顶部 coins icon
-slot_coins = Template(r"+.png", record_pos=(-0.407, -0.906), resolution=(1080, 2316))
+slot_coins = Template(r"tpl1689661044665.png", record_pos=(-0.407, -0.906), resolution=(1080, 2316))
 
-cg_shop_coins_9999 = poco("bflPrice",type="TextBMFont",text="9,999") # cash go 商店 coins 9999档
+
+cg_shop_coins_9999 = poco("bflPrice",type="TextBMFont",text="199") # cash go 商店 coins 9999档
 btnBuy = poco("btnBuy") # 购买按钮
 prize_lbl1 = poco("prize_lbl1") # 收奖确认点击
 btnCollect = poco("btnCollect") # 领奖按钮
