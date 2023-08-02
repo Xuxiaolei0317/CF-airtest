@@ -6,7 +6,7 @@ from airtest.core.api import *
 from airtest.core.android import *
 from airtest.cli.parser import cli_setup
 from poco.drivers.std import StdPoco
-
+ST.SNAPSHOT_QUALITY = 20
 
 poco = StdPoco()
 android = Android()
@@ -21,7 +21,8 @@ if not cli_setup():
     # auto_setup(__file__, logdir=True, devices=["Android://127.0.0.1:5037/d8c92411",])
     # auto_setup(__file__, logdir=True, devices=["android://127.0.0.1:5037/R5CW203G5VF?cap_method=MINICAP&touch_method=MAXTOUCH&",])
 
-    
+# poco("name").child("name").offspring("name") # 父节点选择
+
 btn_close = poco("btn_close") # 活动关闭按钮
 close_btn = poco("close_btn") # 活动中心关闭按钮
 desc = poco("desc") # lobby 气泡
@@ -32,9 +33,6 @@ deal_btn_1 = poco("deal_btn_1") # deal入口
 btnBuild = poco("btnBuild") # cash go 建造按钮
 shop_img17 = poco("shop_img17") # coins OOC 弹窗
 slot_coins_img2 = poco("spAdd") # 顶部 coins icon
-slot_coins = Template(r"tpl1689661026884.png", record_pos=(-0.407, -0.906), resolution=(1080, 2316))
-
-
 cg_shop_coins_9999 = poco("bflPrice",type="TextBMFont",text="9,999") # cash go 商店 coins 9999档
 btnBuy = poco("btnBuy") # 购买按钮
 prize_lbl1 = poco("prize_lbl1") # 收奖确认点击
@@ -44,8 +42,13 @@ level_label = poco("level_label") # 等级的label
 setting = poco(text="setting_node").child(text="enter_btn") # 大厅的setting按钮
 cg_build = poco("slot_menu_img2")# cash go 的
 bfl_pro = poco("bfl_pro")
-
-
+slot_coins = Template(r"tpl1689661026884.png", record_pos=(-0.407, -0.906), resolution=(1080, 2316)) # 顶部 coins icon +号按钮
+cg_btn_spin = poco("Node").child("btn_spin") # spin按钮
+cg_btn_add = poco("Node").child("btn_add") # bet +
+cg_btn_rud = poco("Node").child("btn_rud") # bet -
+cg_bet = int(poco("bfl_bet_mul").get_text()[1:]) # bet
+cg_spins = int(poco("bfl_time").get_text()[1:-6]) # 大于50次的spin次数
+cg_spin = int(poco("bfl_pro").get_text()[:-3]) # spin次数
 
 def if_click(name):
     """判断节点是否存在; 存在返回:True 并点击该节点; 节点不存在返回:False;"""
@@ -84,9 +87,8 @@ def cash_go_build_ooc():
     sleep(1)
     if_click(cg_build) # 点击build页签返回建造界面，此处用的build的红点定位的
     
-        
-print("==== start ====")
-if __name__ == '__main__':
+def cash_go_build():
+    """cash go 建造升级"""
     while True:
         if if_click(btnCollect):
             if_click(btnCollect)
@@ -100,7 +102,36 @@ if __name__ == '__main__':
             ST.SAVE_IMAGE = True # 开
             if_click(btnBuild)
 
-# adb_screenshot()
-
-
+def cash_go_attack():
+    """cash go 攻击"""
+    # 点击一个可攻击的建筑
+    if_click(poco("Button"))
+    sleep(3)
+    attck_name = poco("bflName").get_text()
+    attck_coins = poco("bflCoins").get_text()
+    log(f'攻击:{attck_name},获得:{attck_coins}金币')
+    sleep(2)
+    # 结算界面点击收奖
+    if_click(btnCollect)
+    
+def cash_go_steal():
+    """cash go 偷钱"""
+    pass
+def cash_go_spin():
+    while cg_spin > 1:
+        # 判断是否在攻击界面
+        if if_click(poco("attack_img4")):
+            cash_go_attack()
+        # # 判断是否在偷钱界面
+        # elif if_click():
+        #     cash_go_steal()
+        elif if_click(prize_lbl1):
+            if_click(prize_lbl1)
+        else:
+            ST.SAVE_IMAGE = False # 关
+            if_click(cg_btn_spin)
+            ST.SAVE_IMAGE = True # 开
+if __name__ == '__main__':
+    log("==== start ====")
+    cash_go_spin()
 
