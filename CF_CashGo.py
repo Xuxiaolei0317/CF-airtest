@@ -11,9 +11,11 @@ ST.SNAPSHOT_QUALITY = 20
 poco = StdPoco()
 android = Android()
 
-# log截图：开关
-# ST.SAVE_IMAGE = True # 开
-# ST.SAVE_IMAGE = False # 关
+'''
+log截图：开关
+ST.SAVE_IMAGE = True # 开
+ST.SAVE_IMAGE = False # 关
+'''
 
 if not cli_setup():
     auto_setup(__file__, logdir=True, devices=["Android:///",])
@@ -40,15 +42,13 @@ btnCollect = poco("btnCollect") # 领奖按钮
 label_id = poco("label_id") # ID的label
 level_label = poco("level_label") # 等级的label
 setting = poco(text="setting_node").child(text="enter_btn") # 大厅的setting按钮
-cg_build = poco("slot_menu_img2")# cash go 的
+cg_build = poco("slot_menu_img2") # cash go 的
 bfl_pro = poco("bfl_pro")
 slot_coins = Template(r"tpl1689661026884.png", record_pos=(-0.407, -0.906), resolution=(1080, 2316)) # 顶部 coins icon +号按钮
 cg_btn_spin = poco("Node").child("btn_spin") # spin按钮
 cg_btn_add = poco("Node").child("btn_add") # bet +
 cg_btn_rud = poco("Node").child("btn_rud") # bet -
-cg_bet = int(poco("bfl_bet_mul").get_text()[1:]) # bet
-cg_spins = int(poco("bfl_time").get_text()[1:-6]) # 大于50次的spin次数
-cg_spin = int(poco("bfl_pro").get_text()[:-3]) # spin次数
+
 
 def if_click(name):
     """判断节点是否存在; 存在返回:True 并点击该节点; 节点不存在返回:False;"""
@@ -118,6 +118,9 @@ def cash_go_steal():
     """cash go 偷钱"""
     pass
 def cash_go_spin():
+    cg_bet = int(poco("bfl_bet_mul").get_text()[1:]) # bet
+    cg_spins = int(poco("bfl_time").get_text()[1:-6]) # 大于50次的spin次数
+    cg_spin = int(poco("bfl_pro").get_text()[:-3]) # spin次数
     while cg_spin > 1:
         # 判断是否在攻击界面
         if if_click(poco("attack_img4")):
@@ -133,5 +136,5 @@ def cash_go_spin():
             ST.SAVE_IMAGE = True # 开
 if __name__ == '__main__':
     log("==== start ====")
-    cash_go_spin()
+    cash_go_build()
 

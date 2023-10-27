@@ -30,4 +30,3 @@ ST.SAVE_IMAGE = True
 if __name__ == '__main__':
     print("====star====")
     
-    
