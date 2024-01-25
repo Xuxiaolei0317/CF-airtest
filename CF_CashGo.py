@@ -49,7 +49,6 @@ cg_btn_spin = poco("Node").child("btn_spin") # spin按钮
 cg_btn_add = poco("Node").child("btn_add") # bet +
 cg_btn_rud = poco("Node").child("btn_rud") # bet -
 
-
 def if_click(name):
     """判断节点是否存在; 存在返回:True 并点击该节点; 节点不存在返回:False;"""
     if name.exists():
@@ -91,10 +90,11 @@ def cash_go_build():
     """cash go 建造升级"""
     while True:
         if if_click(btnCollect):
+            cg_kingdom_index = poco("bfl_rank_num").get_text()[-2:]
             if_click(btnCollect)
             if_click(prize_lbl1)
             sleep(6)
-            log("小岛升级")
+            log(f'{cg_kingdom_index}级小岛完成')
         elif if_click(shop_img17):
             cash_go_build_ooc()
             continue
@@ -112,8 +112,7 @@ def cash_go_attack():
     log(f'攻击:{attck_name},获得:{attck_coins}金币')
     sleep(2)
     # 结算界面点击收奖
-    if_click(btnCollect)
-    
+    if_click(btnCollect)    
 def cash_go_steal():
     """cash go 偷钱"""
     pass
@@ -137,4 +136,5 @@ def cash_go_spin():
 if __name__ == '__main__':
     log("==== start ====")
     cash_go_build()
+
 
