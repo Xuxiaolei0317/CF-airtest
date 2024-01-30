@@ -37,7 +37,7 @@ shop_img17 = poco("shop_img17") # coins OOC 弹窗
 slot_coins_img2 = poco("spAdd") # 顶部 coins icon
 cg_shop_coins_9999 = poco("bflPrice",type="TextBMFont",text="9,999") # cash go 商店 coins 9999档
 btnBuy = poco("btnBuy") # 购买按钮
-prize_lbl1 = poco("prize_lbl1") # 收奖确认点击
+btnShare = poco("btnShare") # 小岛完成后的分享按钮
 btnCollect = poco("btnCollect") # 领奖按钮
 label_id = poco("label_id") # ID的label
 level_label = poco("level_label") # 等级的label
@@ -89,12 +89,13 @@ def cash_go_build_ooc():
 def cash_go_build():
     """cash go 建造升级"""
     while True:
-        if if_click(btnCollect):
+        if btnShare.exists():
             cg_kingdom_index = poco("bfl_rank_num").get_text()[-2:]
-            if_click(btnCollect)
-            if_click(prize_lbl1)
-            sleep(6)
             log(f'{cg_kingdom_index}级小岛完成')
+            if_click(btnCollect)
+            sleep(6)
+        elif btnCollect.exists():
+            if_click(btnCollect)
         elif if_click(shop_img17):
             cash_go_build_ooc()
             continue
@@ -136,5 +137,8 @@ def cash_go_spin():
 if __name__ == '__main__':
     log("==== start ====")
     cash_go_build()
+
+
+
 
 
