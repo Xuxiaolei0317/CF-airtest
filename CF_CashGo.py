@@ -18,8 +18,8 @@ ST.SAVE_IMAGE = False # 关
 '''
 
 if not cli_setup():
-    auto_setup(__file__, logdir=True, devices=["Android:///",])
-    # auto_setup(__file__, logdir=True, devices=["Android:///127.0.0.1:7555",])
+#     auto_setup(__file__, logdir=True, devices=["Android:///",])
+    auto_setup(__file__, logdir=True, devices=["Android:///127.0.0.1:7555",])
     # auto_setup(__file__, logdir=True, devices=["Android://127.0.0.1:5037/d8c92411",])
     # auto_setup(__file__, logdir=True, devices=["android://127.0.0.1:5037/R5CW203G5VF?cap_method=MINICAP&touch_method=MAXTOUCH&",])
 
@@ -48,7 +48,7 @@ slot_coins = Template(r"tpl1689661026884.png", record_pos=(-0.407, -0.906), reso
 cg_btn_spin = poco("Node").child("btn_spin") # spin按钮
 cg_btn_add = poco("Node").child("btn_add") # bet +
 cg_btn_rud = poco("Node").child("btn_rud") # bet -
-
+cg_btn = poco("Node").child("Button")
 def if_click(name):
     """判断节点是否存在; 存在返回:True 并点击该节点; 节点不存在返回:False;"""
     if name.exists():
@@ -89,6 +89,7 @@ def cash_go_build_ooc():
 def cash_go_build():
     """cash go 建造升级"""
     while True:
+        '''死循环，一直建造小岛'''
         if btnShare.exists():
             cg_kingdom_index = poco("bfl_rank_num").get_text()[-2:]
             log(f'{cg_kingdom_index}级小岛完成')
@@ -116,7 +117,8 @@ def cash_go_attack():
     if_click(btnCollect)    
 def cash_go_steal():
     """cash go 偷钱"""
-    pass
+    if if_click(cg_btn_spin):
+        pass
 def cash_go_spin():
     cg_bet = int(poco("bfl_bet_mul").get_text()[1:]) # bet
     cg_spins = int(poco("bfl_time").get_text()[1:-6]) # 大于50次的spin次数
@@ -136,7 +138,8 @@ def cash_go_spin():
             ST.SAVE_IMAGE = True # 开
 if __name__ == '__main__':
     log("==== start ====")
-    cash_go_build()
+#     cash_go_build()
+    if_click(cg_btn)
 
 
 
