@@ -7,7 +7,7 @@ from airtest.core.android import *
 from airtest.cli.parser import cli_setup
 from poco.drivers.std import StdPoco
 ST.SNAPSHOT_QUALITY = 20
-
+ST.SAVE_IMAGE = False # 关
 poco = StdPoco()
 android = Android()
 
@@ -18,10 +18,10 @@ ST.SAVE_IMAGE = False # 关
 '''
 
 if not cli_setup():
-#     auto_setup(__file__, logdir=True, devices=["Android:///",])
-    auto_setup(__file__, logdir=True, devices=["Android:///127.0.0.1:7555",])
-    # auto_setup(__file__, logdir=True, devices=["Android://127.0.0.1:5037/d8c92411",])
-    # auto_setup(__file__, logdir=True, devices=["android://127.0.0.1:5037/R5CW203G5VF?cap_method=MINICAP&touch_method=MAXTOUCH&",])
+    auto_setup(__file__, logdir=True, devices=["Android:///",])
+#     auto_setup(__file__, logdir=True, devices=["Android:///127.0.0.1:7555",])
+    # auto_setup(__file__, logdir=True, devices=["Android://127.0.0.1:5037/5ca91dd2",])
+#     auto_setup(__file__, logdir=True, devices=["android://127.0.0.1:5037/R5CW203G5VF",])
 
 # poco("name").child("name").offspring("name") # 父节点选择
 
@@ -45,10 +45,17 @@ setting = poco(text="setting_node").child(text="enter_btn") # 大厅的setting�
 cg_build = poco("slot_menu_img2") # cash go 的
 bfl_pro = poco("bfl_pro")
 slot_coins = Template(r"tpl1689661026884.png", record_pos=(-0.407, -0.906), resolution=(1080, 2316)) # 顶部 coins icon +号按钮
-cg_btn_spin = poco("Node").child("btn_spin") # spin按钮
-cg_btn_add = poco("Node").child("btn_add") # bet +
-cg_btn_rud = poco("Node").child("btn_rud") # bet -
-cg_btn = poco("Node").child("Button")
+cg_btn_spin = poco("btn_spin") # spin按钮
+cg_btn_add = poco("btn_add") # bet +
+cg_btn_rud = poco("btn_rud") # bet -
+cg_btn = poco("Button")
+num = 1
+
+def if_exists(name):
+    jd_name = name.get_name()
+    exists(jd_name,timeout=3)
+    touch(jd_name)
+
 def if_click(name):
     """判断节点是否存在; 存在返回:True 并点击该节点; 节点不存在返回:False;"""
     if name.exists():
@@ -92,6 +99,11 @@ def cash_go_build():
         '''死循环，一直建造小岛'''
         if btnShare.exists():
             cg_kingdom_index = poco("bfl_rank_num").get_text()[-2:]
+            # 将小岛等级转换为整数
+            kingdom_level = int(cg_kingdom_index)
+            # 判断小岛等级是否达到 167
+            if kingdom_level == 7:
+                break
             log(f'{cg_kingdom_index}级小岛完成')
             if_click(btnCollect)
             sleep(6)
@@ -106,15 +118,20 @@ def cash_go_build():
 
 def cash_go_attack():
     """cash go 攻击"""
+    global num
     # 点击一个可攻击的建筑
     if_click(poco("Button"))
-    sleep(3)
+#     sleep(3)
+    attack_tips = wait("Image_1",timeout=5)
     attck_name = poco("bflName").get_text()
     attck_coins = poco("bflCoins").get_text()
-    log(f'攻击:{attck_name},获得:{attck_coins}金币')
-    sleep(2)
+    log(f'第{num}次，攻击:{attck_name},获得:{attck_coins}金币')
+#     sleep(2)
     # 结算界面点击收奖
-    if_click(btnCollect)    
+    if_click(btnCollect)
+    num += 1
+    return num
+    
 def cash_go_steal():
     """cash go 偷钱"""
     if if_click(cg_btn_spin):
@@ -127,19 +144,27 @@ def cash_go_spin():
         # 判断是否在攻击界面
         if if_click(poco("attack_img4")):
             cash_go_attack()
+            
+        else:
+            if_click(cg_btn_spin)
         # # 判断是否在偷钱界面
         # elif if_click():
         #     cash_go_steal()
-        elif if_click(prize_lbl1):
-            if_click(prize_lbl1)
-        else:
-            ST.SAVE_IMAGE = False # 关
-            if_click(cg_btn_spin)
-            ST.SAVE_IMAGE = True # 开
+#         elif if_click(prize_lbl1):
+#             if_click(prize_lbl1)
+            
+#             ST.SAVE_IMAGE = True # 开
 if __name__ == '__main__':
     log("==== start ====")
-#     cash_go_build()
-    if_click(cg_btn)
+    # assert_exists(cg_btn_spin,"spin 按钮点不了")
+#     if_click(cg_btn_spin)
+    
+    # cash_go_spin()
+
+    cash_go_build()
+#     if_click(cg_btn)
+
+
 
 
 

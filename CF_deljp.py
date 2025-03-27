@@ -15,15 +15,21 @@ poco = StdPoco()
 android = Android()
 
 if not cli_setup():
-#     auto_setup(__file__, logdir=True, devices=["Android:///",])
+    auto_setup(__file__, logdir=True, devices=["Android:///",])
 #     auto_setup(__file__, logdir=True, devices=["Android:///127.0.0.1:7555",])
 #     auto_setup(__file__, logdir=True, devices=["Android://127.0.0.1:5037/d8c92411",])
-    auto_setup(__file__, logdir=True, devices=["android://127.0.0.1:5037/R5CW203G5VF",])
+#     auto_setup(__file__, logdir=True, devices=["android://127.0.0.1:5037/R5CW203G5VF",])
 
 # debug按钮
-debug_button = poco("debugUINode")
+debug = poco("Button",type="Button")
+debug_theme = None
+debug_theme_idlabel = None
+
+
 # 继续截图
 ST.SAVE_IMAGE = True
+
+# poco("name").child("name").offspring("name") # 父节点选择
 
 def if_click(name):
     """判断节点是否存在; 存在返回:True 并点击该节点; 节点不存在返回:False;"""
@@ -35,5 +41,6 @@ def if_click(name):
 
 if __name__ == '__main__':
     print("====star====")
-    if_click(debug_button)
+    
+
     
