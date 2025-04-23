@@ -1,7 +1,8 @@
 # -*- encoding=utf8 -*-
 __author__ = "Xiaolei"
 
-from datetime import datetime
+# 删除下面这行
+# from datetime import datetime
 from airtest.core.api import *
 from airtest.core.android import *
 from airtest.cli.parser import cli_setup
@@ -18,8 +19,8 @@ ST.SAVE_IMAGE = False # 关
 '''
 
 if not cli_setup():
-    auto_setup(__file__, logdir=True, devices=["Android:///",])
-#     auto_setup(__file__, logdir=True, devices=["Android:///127.0.0.1:7555",])
+#     auto_setup(__file__, logdir=True, devices=["Android:///",])
+    auto_setup(__file__, logdir=True, devices=["Android://127.0.0.1:5037/127.0.0.1:16416",])
     # auto_setup(__file__, logdir=True, devices=["Android://127.0.0.1:5037/5ca91dd2",])
 #     auto_setup(__file__, logdir=True, devices=["android://127.0.0.1:5037/R5CW203G5VF",])
 
@@ -35,9 +36,10 @@ deal_btn_1 = poco("deal_btn_1") # deal入口
 btnBuild = poco("btnBuild") # cash go 建造按钮
 shop_img17 = poco("shop_img17") # coins OOC 弹窗
 slot_coins_img2 = poco("spAdd") # 顶部 coins icon
-cg_shop_coins_9999 = poco("bflPrice",type="TextBMFont",text="9,999") # cash go 商店 coins 9999档
+cg_shop_coins_9999 = poco("bflPrice",type="Label",text="9,999") # cash go 商店 coins 9999档
 btnBuy = poco("btnBuy") # 购买按钮
 btnShare = poco("btnShare") # 小岛完成后的分享按钮
+prize_lbl1 = poco("prize_lbl1") # 领奖按钮
 btnCollect = poco("btnCollect") # 领奖按钮
 label_id = poco("label_id") # ID的label
 level_label = poco("level_label") # 等级的label
@@ -64,105 +66,84 @@ def if_click(name):
     else:
         return False
 
+def buy_coins_and_collect_optimized():
+    """优化后的购买金币并领奖函数"""
+    coin_template = Template(r"tpl1743048545890.png", record_pos=(0.322, 0.138), resolution=(1080, 2340))
+    buy_template = Template(r"tpl1743048578447.png", record_pos=(0.006, 0.286), resolution=(1080, 2340))
+    for _ in range(3):
+        touch(coin_template)
+        touch(buy_template)
+        if_click(prize_lbl1)
+        sleep(1)
+
 def cash_go_build_ooc():
     """cash go 建造过程中金币不足, 触发ooc后的商店购买金币操作"""
     # 暂时关闭截图
     ST.SAVE_IMAGE = False
-    if_click(btnClose) # 关闭ooc
+    if_click(btnClose)  # 关闭ooc
     sleep(1)
-    touch(slot_coins) # 点击右上角+号按钮，跳转商店
+    touch(slot_coins)  # 点击右上角+号按钮，跳转商店
     sleep(1)
-    if_click(cg_shop_coins_9999) # 点击金币9999档
-    cg_shop_coins_9999.get_text()
-    sleep(1)
-    if_click(btnBuy) # 点击购买
-    sleep(1)
-    if_click(prize_lbl1) # 领奖
-    sleep(1)
-    if_click(cg_shop_coins_9999) # 点击金币9999档
-    sleep(1)
-    if_click(btnBuy) # 点击购买
-    sleep(1)
-    if_click(prize_lbl1) # 领奖
-    sleep(1)
-    if_click(cg_shop_coins_9999) # 点击金币9999档
-    sleep(1)
-    if_click(btnBuy) # 点击购买
-    sleep(1)
-    if_click(prize_lbl1) # 领奖
-    sleep(1)
-    if_click(cg_build) # 点击build页签返回建造界面，此处用的build的红点定位的
-    
+    buy_coins_and_collect_optimized()
+    if_click(cg_build)  # 点击build页签返回建造界面，此处用的build的红点定位的
+
+def update_node_status():
+    """更新节点信息"""
+    global btn_share_exists, btn_collect_exists, shop_img17_exists
+    btn_share_exists = btnShare.exists()
+    btn_collect_exists = btnCollect.exists()
+    shop_img17_exists = shop_img17.exists()
+
 def cash_go_build():
     """cash go 建造升级"""
-    while True:
-        '''死循环，一直建造小岛'''
-        if btnShare.exists():
-            cg_kingdom_index = poco("bfl_rank_num").get_text()[-2:]
-            # 将小岛等级转换为整数
-            kingdom_level = int(cg_kingdom_index)
-            # 判断小岛等级是否达到 167
-            if kingdom_level == 7:
-                break
-            log(f'{cg_kingdom_index}级小岛完成')
-            if_click(btnCollect)
-            sleep(6)
-        elif btnCollect.exists():
-            if_click(btnCollect)
-        elif if_click(shop_img17):
-            cash_go_build_ooc()
-            continue
-        else:
-            ST.SAVE_IMAGE = True # 开
-            if_click(btnBuild)
+    # 缓存节点信息
+    update_node_status()
 
-def cash_go_attack():
-    """cash go 攻击"""
-    global num
-    # 点击一个可攻击的建筑
-    if_click(poco("Button"))
-#     sleep(3)
-    attack_tips = wait("Image_1",timeout=5)
-    attck_name = poco("bflName").get_text()
-    attck_coins = poco("bflCoins").get_text()
-    log(f'第{num}次，攻击:{attck_name},获得:{attck_coins}金币')
-#     sleep(2)
-    # 结算界面点击收奖
-    if_click(btnCollect)
-    num += 1
-    return num
-    
-def cash_go_steal():
-    """cash go 偷钱"""
-    if if_click(cg_btn_spin):
-        pass
-def cash_go_spin():
-    cg_bet = int(poco("bfl_bet_mul").get_text()[1:]) # bet
-    cg_spins = int(poco("bfl_time").get_text()[1:-6]) # 大于50次的spin次数
-    cg_spin = int(poco("bfl_pro").get_text()[:-3]) # spin次数
-    while cg_spin > 1:
-        # 判断是否在攻击界面
-        if if_click(poco("attack_img4")):
-            cash_go_attack()
-            
-        else:
-            if_click(cg_btn_spin)
-        # # 判断是否在偷钱界面
-        # elif if_click():
-        #     cash_go_steal()
-#         elif if_click(prize_lbl1):
-#             if_click(prize_lbl1)
-            
-#             ST.SAVE_IMAGE = True # 开
+    while True:
+        try:
+            '''死循环，一直建造小岛'''
+            if btn_share_exists:
+                # 从UI元素中获取文本内容
+                text = poco("bfl_rank_num").get_text()
+                # 以 # 号为分隔符，提取等级信息
+                cg_kingdom_index = text.split('#')[-1]
+                # 将小岛等级转换为整数
+                kingdom_level = int(cg_kingdom_index)
+                # 判断小岛等级是否达到 168
+                if kingdom_level == 71:
+                    log(f'建造到{cg_kingdom_index}级结束，退出程序')
+                    if_click(btnCollect)
+                    break
+                log(f'{cg_kingdom_index}级小岛完成')
+                if_click(btnCollect)
+                sleep(6)
+                # 更新节点信息
+                update_node_status()
+            elif btn_collect_exists:
+                if_click(btnCollect)
+                # 更新节点信息
+                update_node_status()
+            elif shop_img17_exists and if_click(shop_img17):
+                cash_go_build_ooc()
+                # 更新节点信息
+                update_node_status()
+                continue
+            else:
+                ST.SAVE_IMAGE = True  # 开
+                if_click(btnBuild)
+                if_click(btnBuild)
+                # 更新节点信息
+                update_node_status()
+        except Exception as e:
+            log(f"发生异常: {e}")
+            sleep(1)
+
 if __name__ == '__main__':
     log("==== start ====")
-    # assert_exists(cg_btn_spin,"spin 按钮点不了")
-#     if_click(cg_btn_spin)
-    
-    # cash_go_spin()
-
     cash_go_build()
-#     if_click(cg_btn)
+    # if_click(cg_btn)
+
+
 
 
 
