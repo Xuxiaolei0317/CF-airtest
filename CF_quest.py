@@ -34,9 +34,16 @@ label_id = poco("label_id") # ID的label
 btn_close = poco("btn_close") # 活动关闭按钮
 # cash_frenzy = poco("android.widget.TextView") # 桌面的CF图标
 # English = poco(text="item_1".child(text="language_btn"))
-def if_click(name):
-    """判断节点是否存在; 存在返回:True 并点击该节点; 节点不存在返回:False;"""
-    if name.exists():
+from typing import Any
+
+def if_click(name: Any) -> bool:
+    """
+    判断节点是否存在; 存在返回:True 并点击该节点; 节点不存在返回:False;
+
+    :param name: 要检查和点击的 UI 节点对象
+    :return: 节点存在返回 True，不存在返回 False
+    """
+    if name.exists(timeout=2):  # 添加超时参数
         name.click()
         return True
     else:
