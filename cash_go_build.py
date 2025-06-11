@@ -26,8 +26,6 @@ if not cli_setup():
 # poco("name").child("name").offspring("name") # 父节点选择
 
 
-
-
 btnClose = poco("btnClose") # cash go 弹窗关闭按钮
 btnBuild = poco("btnBuild") # cash go 建造按钮
 shop_img17 = poco("shop_img17") # coins OOC 弹窗
@@ -114,6 +112,8 @@ if __name__ == '__main__':
     log("==== start ====")
     cash_go_build()
 #     print(build_indexs)
+    text("hello airtest")
+
     
  
 

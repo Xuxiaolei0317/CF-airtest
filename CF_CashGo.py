@@ -46,7 +46,7 @@ level_label = poco("level_label") # 等级的label
 setting = poco(text="setting_node").child(text="enter_btn") # 大厅的setting按钮
 cg_build = poco("slot_menu_img2") # cash go 的
 bfl_pro = poco("bfl_pro")
-slot_coins = Template(r"tpl1689661026884.png", record_pos=(-0.407, -0.906), resolution=(1080, 2316)) # 顶部 coins icon +号按钮
+slot_coins = poco("btn_add_coins")# 顶部 coins icon +号按钮
 cg_btn_spin = poco("btn_spin") # spin按钮
 cg_btn_add = poco("btn_add") # bet +
 cg_btn_rud = poco("btn_rud") # bet -

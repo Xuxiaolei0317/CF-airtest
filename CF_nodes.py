@@ -13,30 +13,8 @@ class common_nodes:
     '''通用节点'''
     def __init__(self):
         self.btn_close = poco("btn_close")  # 通用关闭按钮1
-        self.close_btn = poco("close_btn")  # 活动中心关闭按钮
-        self.desc = poco("desc")  # lobby 气泡
-        self.btnClose = poco("btnClose")  # cash go 弹窗关闭按钮
-        self.level_label = poco("level_label")  # 等级显示
-        self.buy_btn_2 = poco("buy_btn_2")  # 商店入口
-        self.deal_btn_1 = poco("deal_btn_1")  # deal入口
-        self.btnBuild = poco("btnBuild")  # cash go 建造按钮
-        self.shop_img17 = poco("shop_img17")  # coins OOC 弹窗
-        self.slot_coins_img2 = poco("spAdd")  # 顶部 coins icon
-        self.cg_shop_coins_9999 = poco("bflPrice", type="Label", text="9,999")  # cash go 商店 coins 9999档
-        self.btnBuy = poco("btnBuy")  # 购买按钮
-        self.btnShare = poco("btnShare")  # 小岛完成后的分享按钮
-        self.prize_lbl1 = poco("prize_lbl1")  # 领奖按钮
-        self.btnCollect = poco("btnCollect")  # 领奖按钮
-        self.label_id = poco("label_id")  # ID的label
-        self.level_label = poco("level_label")  # 等级的label
-        self.setting = poco(text="setting_node").child(text="enter_btn")  # 大厅的setting按钮
-        self.cg_build = poco("slot_menu_img2")  # cash go 的
-        self.bfl_pro = poco("bfl_pro")
-        self.slot_coins = Template(r"tpl1689661026884.png", record_pos=(-0.407, -0.906), resolution=(1080, 2316))  # 顶部 coins icon +号按钮
-        self.cg_btn_spin = poco("btn_spin")  # spin按钮
-        self.cg_btn_add = poco("btn_add")  # bet +
-        self.cg_btn_rud = poco("btn_rud")  # bet -
-        self.cg_btn = poco("Button")
+        self.close_btn = poco("close_btn")  # 通用关闭按钮2
+        
 
     class lobby_footer_nodes:
         '''大厅 Lobby Footer 节点'''
@@ -79,8 +57,9 @@ class common_nodes:
             self.lobby_eao_icon = poco("eao_node")
             # 定义大厅中 设置 功能对应的图标节点
             self.lobby_setting_icon = poco("setting_node")
+            
 
-    class B_activity():
+    class B_activity:
         '''B级模块节点'''
         def cz(self):
             '''B级CHALLENGE ZONE界面节点'''
@@ -97,15 +76,93 @@ class common_nodes:
             self.tower = poco("b_list").child("main_item")[10].child("btn_choose")
             self.coin_mania = poco("b_list").child("main_item")[11].child("btn_choose")
             self.merge = poco("b_list").child("main_item")[12].child("btn_choose")
-            
             self.cz_b_pass = poco("pass_node")
             self.cz_btn_rank = poco("btn_rank")
             self.cz_b_store = poco("btn_b_store")
             self.cz_get_b_token = poco("token_node").child(type="Label").get_text()
             self.cz_play_btn = poco("btn_play")
+            return self
+        def b_archer(self):
+            pass
+        def b_bingo(self):
+            pass
+        def b_pick(self):
+            pass
+        def b_cooking(self):
+            pass
+        def b_makeover(self):
+            pass
+        def b_rocker(self):
+            pass
+        def b_plinko(self):
+            pass
+        def b_journey(self):
+            pass
+        def b_mow(self):
+            pass
+        def b_diamond(self):
+            pass
+        def b_tower(self):
+            pass
+        def b_coin_mania(self):
+            pass
+        def b_merge(self):
+            pass
+        
+    class mansion:
+        '''mansion 节点'''
+        def __init__(self):
+            # self.mansion_btn = poco("mansion_node") #
+            self.mansion_star_label = poco("star_label") # 刷子数量
+            self.mansion_task_btn = poco("task_btn") # PLAY按钮
+            self.mansion_bc_btn = poco("bc_btn") # BC按钮
             
+            self.mansion_task_pop = poco("mansion_task_pop") # 房间奖励界面节点，用来判断是否在房间奖励界面
+            self.mansion_do_btn = poco("do_btn")  # 使用刷子建造
+            self.mansion_close_btn = poco("close_btn") # 房间奖励界面关闭按钮
             
+            self.mansion_item_btn = poco("item_btn") # 三选一，选择一个装饰
+            self.mansion_ensure_btn = poco("btn_ensure") # 三选一确认
+            self.mansion_cancel_btn = poco("btn_cancel") # 三选一取消
+            
+            self.mansion_dialog_btn = poco("dialog_btn") # 剧情对话按钮
     
+    class mission_pass:
+        '''mission pass 节点'''
+        def __init__(self):
+            pass
+    class a_steamp:
+        '''A级 邮票 节点'''
+        def __init__(self):
+            pass
+    class a_byd:
+        '''A级  byg 节点'''
+        def __init__(self):
+            pass
+    class a_atw:
+        '''A级  atw 节点'''
+        def __init__(self):
+            pass
+    class a_royal:
+        '''成就 节点'''
+        def __init__(self):
+            pass
+    class cashgo:
+        '''cash go 节点'''
+        def cg_build(self):
+            self.btnClose = poco("btnClose")  # cash go 弹窗关闭按钮
+            self.btnBuild = poco("btnBuild")  # cash go 建造按钮
+            self.btnShare = poco("btnShare")  # 小岛完成后的分享按钮
+            self.cg_btn_spin = poco("btn_spin")  # spin按钮
+            self.cg_btn_add = poco("btn_add")  # bet +
+            self.cg_btn_rud = poco("btn_rud")  # bet -
+            self.build_btn = poco("nd_btn_build")
+            self.ft_build_icon = poco("nd_create").child(type="Layout")
+            self.ft_build_btn = poco("btnFix")
+            self.ft_build_coin = poco("btnFix")
+            self.ft_build_coin_btn = poco("btnFix")
+            self.ft_build_coin_9999 = poco(nameMatches=".*bflPrice",textMatches="9,999")
+            return self
     
 class objects:
     '''封装的一些判断函数'''
@@ -135,3 +192,9 @@ class objects:
             name.click()
             # 返回 True 表示节点存在且已点击
             return True
+
+
+    
+
+
+
