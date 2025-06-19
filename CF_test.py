@@ -11,7 +11,7 @@ from airtest.cli.parser import cli_setup
 # 从 airtest 命令行解析模块导入 cli_setup 函数，用于命令行参数设置。
 from poco.drivers.std import StdPoco
 # 从 poco 标准驱动模块导入 StdPoco 类，用于 UI 元素的定位和操作。
-from .CF_nodes import objects, common_nodes 
+import CF_nodes
 # 私有函数，整合的CF通用节点和
 # 从当前目录导入 objects 和 common_nodes 模块，用于创建对象实例和调用方法。
 
@@ -33,22 +33,40 @@ ST.SAVE_IMAGE = False # 关
 
 if not cli_setup():
     # 检查命令行参数设置是否成功，如果未成功则进行自动设置。
-    auto_setup(__file__, logdir=True, devices=["Android://127.0.0.1:5037/RZ8R81D20ZT",])
+    # auto_setup(__file__, logdir=True, devices=["Android://127.0.0.1:5037/R5CW31DYJ8Z",])
     # 自动设置 Airtest 环境，指定日志目录，连接指定的 Android 设备。
-#     auto_setup(__file__, logdir=True, devices=["Android://127.0.0.1:5037/127.0.0.1:16384",])
+    auto_setup(__file__, logdir=True, devices=["Android://127.0.0.1:5037/127.0.0.1:16384",])
 # 注释掉的自动设置语句，可用于连接另一个 Android 设备。
 
-cf = objects()
-cf_cn = common_nodes()
-cf_lf = cf_cn.mansion().mansion_bc_btn
-# 注释掉的代码，原本用于创建对象实例和调用方法，可能后续会启用。
+cf = CF_nodes
+cf_cn = cf.common_nodes().lobby_footer_nodes().lobby_B_icon
+cf_obj = cf.objects()
+
+# 主题搜索按钮
+theme_search = poco('sider_node_resident').child("btn_search")
+# 搜索输入框
+input_search = poco('btn_touch_editbox')
+# 输入文本
+input_search_text = text('cash')
+# 点击搜索
+result_search = poco('search_node').child("btn_search")
+
 
 if __name__ == '__main__':
     # 判断当前脚本是否作为主程序运行。
     log("==== start ====")
     # 在日志中记录程序开始运行的信息。
-    text("hello airtest")
-    # 在设备上模拟输入文本 "hello airtest"。    
+    # cf_obj.if_click(result_search)
+    theme_search.click()
+    sleep(2)
+    input_search.click()
+    sleep(2)
+    text('cash')
+    sleep(2)
+    result_search.click()
+    sleep(2)
+    swipe((0.7,0.5),(0.3,0.5))
+
     
 
 

@@ -108,7 +108,6 @@ class common_nodes:
             pass
         def b_merge(self):
             pass
-        
     class mansion:
         '''mansion 节点'''
         def __init__(self):
@@ -126,7 +125,6 @@ class common_nodes:
             self.mansion_cancel_btn = poco("btn_cancel") # 三选一取消
             
             self.mansion_dialog_btn = poco("dialog_btn") # 剧情对话按钮
-    
     class mission_pass:
         '''mission pass 节点'''
         def __init__(self):
