@@ -1,2 +1,0 @@
-{"tag": "function", "depth": 1, "time": 1728894203.052459, "data": {"name": "connect_device", "call_args": {"uri": "Android:///"}, "start_time": 1728894202.8066611, "ret": "<Android '127.0.0.1:16416'>", "end_time": 1728894203.0524402}}
-{"tag": "function", "depth": 2, "time": 1728894203.053321, "data": {"name": "try_log_screen", "call_args": {"screen": null, "quality": null, "max_size": null}, "start_time": 1728894203.053239, "ret": null, "end_time": 1728894203.053316}}
