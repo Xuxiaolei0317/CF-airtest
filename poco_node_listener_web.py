@@ -103,16 +103,14 @@ def build_poco_expr(names):
     return expr
 
 
-def build_nodespec_expr(names, desc):
+def build_node_config_expr(names, desc):
     if not names:
         return ""
     root, *children = names
-    if not children:
-        return f"NodeSpec({_python_string(root)}, desc={_python_string(desc)})"
-    chain = ", ".join(f"child({_python_string(child_name)})" for child_name in children)
-    if len(children) == 1:
-        chain += ","
-    return f"NodeSpec({_python_string(root)}, ({chain}), desc={_python_string(desc)})"
+    config = {"root": root, "desc": desc}
+    if children:
+        config["chain"] = [["child", child_name] for child_name in children]
+    return json.dumps(config, ensure_ascii=False)
 
 
 def build_key(names, prefix):
@@ -142,12 +140,12 @@ def format_click(click, prefix="", output="all"):
 
     key = build_key(names, prefix)
     desc = describe_click(click, names, prefix)
-    nodespec_expr = build_nodespec_expr(names, desc)
+    node_config_expr = build_node_config_expr(names, desc)
     poco_expr = build_poco_expr(names)
 
     blocks = []
     if output in {"all", "entry"}:
-        blocks.append(f'"{key}": {nodespec_expr},')
+        blocks.append(f'"{key}": {node_config_expr},')
     if output in {"all", "poco"}:
         blocks.append(f"{poco_expr}.click()")
     if output in {"all", "script"}:
@@ -378,7 +376,7 @@ INDEX_HTML = r"""<!doctype html>
 <body>
   <header>
     <h1>Poco 点击日志生成器</h1>
-    <div class="hint">选择 adb 设备端口后开始监听，点击游戏节点时会实时生成可复制的 NodeSpec 和 Poco 调用代码。</div>
+    <div class="hint">选择 adb 设备端口后开始监听，点击游戏节点时会实时生成可复制的 JSON 节点配置和 Poco 调用代码。</div>
   </header>
 
   <main>
@@ -397,7 +395,7 @@ INDEX_HTML = r"""<!doctype html>
             <label for="outputSelect">输出格式</label>
             <select id="outputSelect">
               <option value="all">全部</option>
-              <option value="entry">NodeSpec 字典条目</option>
+              <option value="entry">JSON 配置条目</option>
               <option value="poco">poco(...).click()</option>
               <option value="script">if_click 示例</option>
             </select>

@@ -229,7 +229,7 @@ INDEX_HTML = r"""<!doctype html>
 <body>
   <header>
     <h1>Poco 节点生成工具</h1>
-    <div class="hint">点击“打印当前页面节点”拉取当前游戏页面节点树，勾选后生成可粘贴到 MT_nodes.py 节点字典里的 NodeSpec 条目。</div>
+    <div class="hint">点击“打印当前页面节点”拉取当前游戏页面节点树，勾选后生成可粘贴到 MT_nodes.json 对应分组里的节点配置条目。</div>
   </header>
 
   <main>
@@ -253,8 +253,8 @@ INDEX_HTML = r"""<!doctype html>
         <button id="copyBtn" class="secondary">复制代码</button>
         <button id="clearBtn" class="secondary">清空勾选</button>
       </div>
-      <div id="outputStatus" class="status">勾选节点后点击生成。生成结果放到 MT_nodes.py 中对应的 *_NODES 字典里。</div>
-      <textarea id="output" spellcheck="false" placeholder='示例："guild_btn_chat": NodeSpec("bottom_node", (child("btn_node"), child("btn_chat")), desc=""),'></textarea>
+      <div id="outputStatus" class="status">勾选节点后点击生成。生成结果放到 MT_nodes.json 对应分组里。</div>
+      <textarea id="output" spellcheck="false" placeholder='示例："guild_btn_chat": {"root": "bottom_node", "chain": [["child", "btn_node"], ["child", "btn_chat"]], "desc": ""},'></textarea>
     </section>
   </main>
 
@@ -326,15 +326,16 @@ INDEX_HTML = r"""<!doctype html>
       return `poco("${root}")` + children.map((name) => `.child("${name}")`).join("");
     }
 
-    function nodeSpecFromNames(names, descText) {
+    function nodeConfigFromNames(names, descText) {
       const shortNames = shortSelectorNames(names);
       if (!shortNames.length) return "";
-      const [root, ...children] = shortNames.map(escapePythonString);
-      const chainItems = children.map((name) => `child("${name}")`);
-      const chain = chainItems.length === 1 ? `${chainItems[0]},` : chainItems.join(", ");
-      const escapedDescText = escapePythonString(descText);
-      if (!chain) return `NodeSpec("${root}", desc="${escapedDescText}")`;
-      return `NodeSpec("${root}", (${chain}), desc="${escapedDescText}")`;
+      const [root, ...children] = shortNames;
+      const config = { root, desc: descText };
+      if (children.length) {
+        config.chain = children.map((name) => ["child", name]);
+        config.desc = descText;
+      }
+      return JSON.stringify(config);
     }
 
     function registerNodes(node) {
@@ -466,11 +467,11 @@ INDEX_HTML = r"""<!doctype html>
         const count = (usedNames.get(baseName) || 0) + 1;
         usedNames.set(baseName, count);
         const nodeKey = count === 1 ? baseName : `${baseName}_${count}`;
-        return `    "${nodeKey}": ${nodeSpecFromNames(node.selector_names, "")},`;
+        return `    "${nodeKey}": ${nodeConfigFromNames(node.selector_names, "")},`;
       });
       outputEl.value = lines.join("\n");
       outputStatusEl.textContent = lines.length
-        ? `已生成 ${lines.length} 行 NodeSpec 条目。粘到 MT_nodes.py 对应的 *_NODES 字典中。`
+        ? `已生成 ${lines.length} 行 JSON 配置条目。粘到 MT_nodes.json 对应分组中。`
         : "没有勾选任何可生成的节点。";
     }
 

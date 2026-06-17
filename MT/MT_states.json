@@ -1,0 +1,71 @@
+{
+  "POPUP_BLOCKING": {
+    "desc": "通用弹窗或遮罩阻塞",
+    "priority": 100,
+    "min_hits": 1,
+    "features": [
+      ["common", "btn_close"],
+      ["common", "close_btn"],
+      ["common", "btn_confirm"],
+      ["common", "mask_close"],
+      ["main", "login_bonus_dialog"],
+      ["main", "news_message_dialog"],
+      ["guild", "guild_collect_pop"]
+    ]
+  },
+  "GUILD_HOME": {
+    "desc": "已加入公会后的公会主页",
+    "priority": 80,
+    "min_hits": 1,
+    "features": [
+      ["guild", "guild_home"],
+      ["guild", "guild_chat_layer"],
+      ["guild", "guild_name_label"],
+      ["guild", "guild_chat_tab"]
+    ]
+  },
+  "GUILD_NOT_JOINED": {
+    "desc": "未加入公会时的搜索或推荐页",
+    "priority": 80,
+    "min_hits": 1,
+    "features": [
+      ["guild", "guild_search_page"],
+      ["guild", "guild_recommend_page"],
+      ["guild", "guild_search_btn"],
+      ["guild", "guild_join_btn"],
+      ["guild", "guild_apply_btn"]
+    ]
+  },
+  "NEW_USER_GUIDE": {
+    "desc": "新手引导流程",
+    "priority": 70,
+    "min_hits": 1,
+    "features": [
+      ["new_user", "guide_dialog"],
+      ["new_user", "guide_skip_btn"],
+      ["new_user", "new_user_guide_word_label"]
+    ]
+  },
+  "SLOT_HOME": {
+    "desc": "Slot 主玩法界面",
+    "priority": 60,
+    "min_hits": 2,
+    "features": [
+      ["slot", "slot_root"],
+      ["slot", "spin_root"],
+      ["slot", "spin_btn"],
+      ["slot", "slot_result_node"]
+    ]
+  },
+  "MAIN_HOME": {
+    "desc": "主界面",
+    "priority": 50,
+    "min_hits": 2,
+    "features": [
+      ["main", "footer_spin"],
+      ["main", "footer_build"],
+      ["main", "footer_guild_friend"],
+      ["main", "header_coin_label"]
+    ]
+  }
+}
