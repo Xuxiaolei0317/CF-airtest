@@ -198,6 +198,23 @@ def extract_progress(text):
     match = re.search(r"(\d+)\s*/\s*(\d+)", text or "")
     return match.groups() if match else ("0", "0")
 
+def run_lua(lua_content, poco_driver=None):
+    """执行传入的 Lua 内容。"""
+    runluapoco = poco_driver or poco
+    try:
+        result = runluapoco.agent.rpc.call("RunLua", lua_content)
+        print(f"执行 Lua 成功：{lua_content}")
+        return result
+    except Exception as e:
+        print(f"执行 Lua 失败：{lua_content} | {e}")
+        return None
+
+
+def click_lobby_theme(theme_id, poco_driver=None, source="poco_automation"):
+    """通过 RunLua 点击指定大厅主题。"""
+    lua_content = f'LobbyThemeControl:getInstance():clickLobbyTheme({theme_id}, nil, "{source}")'
+    return run_lua(lua_content, poco_driver=poco_driver)
+
 
 class common_nodes:
     """CF 节点入口。
@@ -210,6 +227,8 @@ class common_nodes:
     node_spec = staticmethod(node_spec)
     resolve_node = staticmethod(resolve_node)
     node_text = staticmethod(node_text)
+    run_lua = staticmethod(run_lua)
+    click_lobby_theme = staticmethod(click_lobby_theme)
 
     def __init__(self):
         _assign_config_nodes(self, "common")
@@ -349,9 +368,14 @@ class GameActions:
             print(f"点击 {node_name} 失败: {e}")
             return False
 
+    def run_lua(self, lua_content):
+        return run_lua(lua_content, poco_driver=self.poco)
+
+    def click_lobby_theme(self, theme_id, source="poco_automation"):
+        return click_lobby_theme(theme_id, poco_driver=self.poco, source=source)
+
     def swipe_center_to(self, target_node, duration=0.3):
         from airtest.utils.snake import Screen  # pyright: ignore[reportMissingImports]
-
         screen = Screen()
         center = (screen.width / 2, screen.height / 2)
         target_pos = target_node.get_touch_point()

@@ -20,7 +20,7 @@ from pathlib import Path
 # 添加项目根目录到路径
 PROJECT_ROOT = Path(__file__).resolve().parent
 sys.path.insert(0, str(PROJECT_ROOT))
-AIRTEST_ROOT = PROJECT_ROOT / "cf-airtest"
+AIRTEST_ROOT = PROJECT_ROOT
 
 
 def list_tests():
@@ -29,7 +29,7 @@ def list_tests():
     print()
     
     # CF 测试
-    cf_dir = PROJECT_ROOT / "cf-airtest" / "CF"
+    cf_dir = AIRTEST_ROOT / "CF"
     if cf_dir.exists():
         print("  CF (Cash Frenzy):")
         for f in sorted(cf_dir.glob("CF_*.py")):
@@ -38,7 +38,7 @@ def list_tests():
         print()
     
     # MT 测试
-    mt_dir = PROJECT_ROOT / "cf-airtest" / "MT"
+    mt_dir = AIRTEST_ROOT / "MT"
     if mt_dir.exists():
         print("  MT (Mansion Quest):")
         for f in sorted(mt_dir.glob("MT_*.py")):

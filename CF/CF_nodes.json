@@ -92,6 +92,12 @@
     "theme_sub_btn": {"root":"footer","desc":"主题bet减号按钮","chain":[["child","totalbet_node"],["child","sub_btn"]]},
     "theme_add_btn": {"root":"footer","desc":"主题bet加号按钮","chain":[["child","totalbet_node"],["child","add_btn"]]},
     "theme_totalbet_label": {"root":"footer","desc":"主题bet文本","chain":[["child","totalbet_node"],["child","totalbet_label"]]},
-    "theme_label_win": {"root":"totalwin_node","desc":"主题总赢分文本","chain":[["child","win_node"],["child","label_win"]]}
+    "theme_label_win": {"root":"totalwin_node","desc":"主题总赢分文本","chain":[["child","win_node"],["child","label_win"]]},
+    "theme_node_start": {"root":"map_free", "chain": [["child","root"],["child", "node_start"]], "desc": "122map"}
+  },
+  "JP_like": {
+    "JP_like_label_player": {"root":"jackpotnotification","chain":[["child","root"],["child","label_player"]],"desc":"JP_like 玩家name文本"},
+    "JP_like_label_won": {"root":"jackpotnotification","chain":[["child","root"],["child","label_won"]],"desc":"JP_like 赢分文本"},
+    "JP_like_btnLike": {"root":"root","chain":[["child","likeNode"],["child","btnLike"]],"desc":"JP_like 点赞按钮"}
   }
 }

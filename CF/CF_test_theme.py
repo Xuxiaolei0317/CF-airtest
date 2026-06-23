@@ -33,7 +33,7 @@ def lobby_nodes():
 
 
 def enter_theme_by_state():
-    """按 MT 状态机方式进入 Cash Go，并判断最终落在哪个 Cash Go 页面。"""
+    """按状态机方式进入，并判断最终落在哪个页面。"""
     state_machine.recover_blockers()
     state = state_machine.detect_state(verbose=True)
 
@@ -53,6 +53,5 @@ def enter_theme_by_state():
 
 if __name__ == "__main__":
     log("==== start ====")
-    theme_id = 122
-    poco.agent.rpc.call(f"RunLua", f'LobbyThemeControl:getInstance():clickLobbyTheme({theme_id}, nil, "poco_automation")')
+    game_actions.click_lobby_theme(122)
     log("==== end ====")

@@ -14,7 +14,7 @@
     ]
   },
   "THEME_HOME": {
-    "desc": "主题大厅主界面",
+    "desc": "主题主界面",
     "priority": 90,
     "min_hits": 1,
     "features": [
