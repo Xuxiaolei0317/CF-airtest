@@ -31,16 +31,13 @@ def lobby_nodes():
     return common_nodes.lobby_footer_nodes()
 
 
-def cashgo_nodes():
-    return common_nodes.cashgo().cg_build()
 
-
-def enter_cash_go_by_state():
+def enter_theme_by_state():
     """按 MT 状态机方式进入 Cash Go，并判断最终落在哪个 Cash Go 页面。"""
     state_machine.recover_blockers()
     state = state_machine.detect_state(verbose=True)
 
-    if state.name in {"CASH_GO_BUILD", "CASH_GO_COMPLETE", "CASH_GO_OOC"}:
+    if state.name in {"THEME_HOME"}:
         return state
 
     if state.name == "LOBBY_HOME":

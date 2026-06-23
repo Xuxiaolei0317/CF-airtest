@@ -5,6 +5,7 @@
 用法:
     python cf-airtest/node_generator_web.py
     python cf-airtest/node_generator_web.py --serial R5CYA29D4SP --port 8765
+    python cf-airtest/node_generator_web.py --serial 127.0.0.1:16384 --port 8765
 """
 
 import argparse
@@ -12,6 +13,7 @@ import errno
 import json
 import os
 import re
+import subprocess
 import sys
 import webbrowser
 from datetime import datetime
@@ -21,9 +23,11 @@ from urllib.parse import urlparse
 
 
 PROJECT_ROOT = Path(__file__).resolve().parent
-NODE_DUMP_DIR = PROJECT_ROOT / "MT" / "node_dumps"
+NODE_DUMP_DIR = PROJECT_ROOT / "node_dumps"
 
 _POCO = None
+_POCO_SERIAL = None
+_STARTUP_SERIAL = os.environ.get("ANDROID_SERIAL", "")
 
 
 INDEX_HTML = r"""<!doctype html>
@@ -124,6 +128,31 @@ INDEX_HTML = r"""<!doctype html>
       border-radius: 8px;
       padding: 8px 10px;
       font-size: 14px;
+    }
+
+    .device-list {
+      padding: 0 12px 10px;
+      border-bottom: 1px solid var(--border);
+      max-height: 150px;
+      overflow: auto;
+    }
+
+    .device {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      gap: 8px;
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      padding: 8px 10px;
+      margin-bottom: 8px;
+      font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+      font-size: 13px;
+    }
+
+    .muted {
+      color: var(--muted);
+      font-size: 12px;
     }
 
     .status {
@@ -235,12 +264,17 @@ INDEX_HTML = r"""<!doctype html>
   <main>
     <section>
       <div class="toolbar">
+        <input id="serialInput" type="text" placeholder="adb serial / 端口，例如 127.0.0.1:7555；留空使用默认配置" />
+        <button id="refreshDevicesBtn" class="secondary">刷新设备</button>
         <button id="loadBtn">打印当前页面节点</button>
         <button id="expandBtn" class="secondary">展开全部</button>
         <button id="collapseBtn" class="secondary">收起全部</button>
         <input id="scopeInput" type="search" placeholder="输入界面/节点名，只显示该层级" />
         <button id="clearScopeBtn" class="secondary">清空层级筛选</button>
         <input id="searchInput" type="search" placeholder="搜索 name / text / path" />
+      </div>
+      <div id="devices" class="device-list">
+        <div class="muted">点击“刷新设备”查看当前 adb devices。</div>
       </div>
       <div id="status" class="status">等待拉取节点。</div>
       <div id="tree" class="tree-wrap"><div class="empty">暂无节点，请先点击“打印当前页面节点”。</div></div>
@@ -254,7 +288,7 @@ INDEX_HTML = r"""<!doctype html>
         <button id="clearBtn" class="secondary">清空勾选</button>
       </div>
       <div id="outputStatus" class="status">勾选节点后点击生成。生成结果放到 MT_nodes.json 对应分组里。</div>
-      <textarea id="output" spellcheck="false" placeholder='示例："guild_btn_chat": {"root": "bottom_node", "chain": [["child", "btn_node"], ["child", "btn_chat"]], "desc": ""},'></textarea>
+      <textarea id="output" spellcheck="false" placeholder='示例："guild_btn_chat": {"root": "bottom_node", "chain": [["child", "btn_node"], ["child", "btn_chat"]], "desc": "btn_chat"},'></textarea>
     </section>
   </main>
 
@@ -270,6 +304,8 @@ INDEX_HTML = r"""<!doctype html>
     const outputEl = document.getElementById("output");
     const loadBtn = document.getElementById("loadBtn");
     const moduleInput = document.getElementById("moduleInput");
+    const serialInput = document.getElementById("serialInput");
+    const devicesEl = document.getElementById("devices");
     const scopeInput = document.getElementById("scopeInput");
     const searchInput = document.getElementById("searchInput");
 
@@ -330,11 +366,11 @@ INDEX_HTML = r"""<!doctype html>
       const shortNames = shortSelectorNames(names);
       if (!shortNames.length) return "";
       const [root, ...children] = shortNames;
-      const config = { root, desc: descText };
+      const config = { root };
       if (children.length) {
         config.chain = children.map((name) => ["child", name]);
-        config.desc = descText;
       }
+      config.desc = descText;
       return JSON.stringify(config);
     }
 
@@ -426,6 +462,32 @@ INDEX_HTML = r"""<!doctype html>
         : "等待拉取节点。";
     }
 
+    async function refreshDevices() {
+      devicesEl.innerHTML = '<div class="muted">正在读取 adb devices...</div>';
+      try {
+        const response = await fetch("/api/devices");
+        const data = await response.json();
+        if (!data.ok) throw new Error(data.error || "读取失败");
+        if (!data.devices.length) {
+          devicesEl.innerHTML = '<div class="muted">没有发现 device 状态的 adb 设备。</div>';
+          return;
+        }
+        devicesEl.innerHTML = data.devices.map((device) => `
+          <div class="device">
+            <span>${escapeHtml(device.serial)}</span>
+            <button class="secondary" data-serial="${escapeHtml(device.serial)}">使用</button>
+          </div>
+        `).join("");
+        devicesEl.querySelectorAll("button[data-serial]").forEach((button) => {
+          button.addEventListener("click", () => {
+            serialInput.value = button.dataset.serial;
+          });
+        });
+      } catch (error) {
+        devicesEl.innerHTML = `<div class="muted">读取设备失败：${escapeHtml(error.message)}</div>`;
+      }
+    }
+
     function applyScopeFilter() {
       if (!hierarchy) return;
 
@@ -467,7 +529,8 @@ INDEX_HTML = r"""<!doctype html>
         const count = (usedNames.get(baseName) || 0) + 1;
         usedNames.set(baseName, count);
         const nodeKey = count === 1 ? baseName : `${baseName}_${count}`;
-        return `    "${nodeKey}": ${nodeConfigFromNames(node.selector_names, "")},`;
+        const descText = node.name || nodeKey;
+        return `    "${nodeKey}": ${nodeConfigFromNames(node.selector_names, descText)},`;
       });
       outputEl.value = lines.join("\n");
       outputStatusEl.textContent = lines.length
@@ -477,9 +540,14 @@ INDEX_HTML = r"""<!doctype html>
 
     async function loadNodes() {
       loadBtn.disabled = true;
-      statusEl.textContent = "正在拉取当前 Poco 节点树...";
+      const serial = serialInput.value.trim();
+      statusEl.textContent = `正在拉取 ${serial || "默认设备"} 的当前 Poco 节点树...`;
       try {
-        const response = await fetch("/api/nodes", { method: "POST" });
+        const response = await fetch("/api/nodes", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ serial }),
+        });
         const data = await response.json();
         if (!response.ok || !data.ok) throw new Error(data.error || `HTTP ${response.status}`);
         hierarchy = data.hierarchy;
@@ -513,6 +581,7 @@ INDEX_HTML = r"""<!doctype html>
     }
 
     loadBtn.addEventListener("click", loadNodes);
+    document.getElementById("refreshDevicesBtn").addEventListener("click", refreshDevices);
     document.getElementById("generateBtn").addEventListener("click", generateCode);
     document.getElementById("copyBtn").addEventListener("click", async () => {
       await navigator.clipboard.writeText(outputEl.value);
@@ -534,21 +603,62 @@ INDEX_HTML = r"""<!doctype html>
     });
     scopeInput.addEventListener("input", applyScopeFilter);
     searchInput.addEventListener("input", filterTree);
+    refreshDevices();
   </script>
 </body>
 </html>
 """
 
 
-def get_poco():
-    """延迟初始化 Poco，避免打开网页服务时立即连接设备。"""
-    global _POCO
-    if _POCO is None:
-        if str(PROJECT_ROOT) not in sys.path:
-            sys.path.insert(0, str(PROJECT_ROOT))
-        from airtest_booststrap import poco
+def list_adb_devices():
+    try:
+        result = subprocess.run(["adb", "devices"], capture_output=True, text=True, check=False)
+    except FileNotFoundError:
+        return {
+            "ok": False,
+            "error": "未找到 adb，请确认 Android platform-tools 已安装并在 PATH 中。",
+            "devices": [],
+        }
+    if result.returncode != 0:
+        return {
+            "ok": False,
+            "error": (result.stderr or result.stdout or "adb devices 执行失败").strip(),
+            "devices": [],
+        }
 
+    devices = []
+    for line in result.stdout.splitlines()[1:]:
+        line = line.strip()
+        if not line:
+            continue
+        parts = line.split()
+        if len(parts) >= 2 and parts[1] == "device":
+            devices.append({"serial": parts[0], "state": parts[1]})
+    return {"ok": True, "devices": devices}
+
+
+def get_poco(serial=""):
+    """延迟初始化 Poco，避免打开网页服务时立即连接设备。"""
+    global _POCO, _POCO_SERIAL
+    requested_serial = (serial or "").strip()
+    active_serial = requested_serial or _STARTUP_SERIAL
+    if _POCO is not None and _POCO_SERIAL == active_serial:
+        return _POCO
+
+    if active_serial:
+        os.environ["ANDROID_SERIAL"] = active_serial
+    else:
+        os.environ.pop("ANDROID_SERIAL", None)
+    if str(PROJECT_ROOT) not in sys.path:
+        sys.path.insert(0, str(PROJECT_ROOT))
+    from airtest_booststrap import init_device, init_poco, poco
+
+    if _POCO is None:
         _POCO = poco
+    else:
+        dev = init_device(serial=active_serial or None)
+        _POCO = init_poco(dev, auto_refresh=False)
+    _POCO_SERIAL = active_serial
     return _POCO
 
 
@@ -636,8 +746,8 @@ def save_dump(raw_hierarchy, web_tree, flat_nodes):
     return file_path
 
 
-def dump_current_page_nodes():
-    raw_hierarchy = get_poco().agent.hierarchy.dump()
+def dump_current_page_nodes(serial=""):
+    raw_hierarchy = get_poco(serial).agent.hierarchy.dump()
     web_tree = build_tree(raw_hierarchy)
     flat_nodes = flatten_tree(web_tree)
     dump_path = save_dump(raw_hierarchy, web_tree, flat_nodes)
@@ -683,6 +793,9 @@ class NodeGeneratorHandler(BaseHTTPRequestHandler):
         if path in ("/", "/index.html"):
             self.send_html()
             return
+        if path == "/api/devices":
+            self.send_json(list_adb_devices())
+            return
         self.send_error(404, "Not found")
 
     def do_POST(self):
@@ -691,7 +804,13 @@ class NodeGeneratorHandler(BaseHTTPRequestHandler):
             self.send_error(404, "Not found")
             return
         try:
-            self.send_json(dump_current_page_nodes())
+            content_length = int(self.headers.get("Content-Length", "0") or 0)
+            payload = {}
+            if content_length:
+                body = self.rfile.read(content_length).decode("utf-8")
+                payload = json.loads(body or "{}")
+            serial = str(payload.get("serial", "")).strip()
+            self.send_json(dump_current_page_nodes(serial=serial))
         except Exception as exc:
             self.send_json({"ok": False, "error": str(exc)}, status=500)
 
@@ -721,9 +840,11 @@ def create_server(host, port, max_attempts=20):
 
 
 def main():
+    global _STARTUP_SERIAL
     args = parse_args()
     if args.serial:
         os.environ["ANDROID_SERIAL"] = args.serial
+    _STARTUP_SERIAL = os.environ.get("ANDROID_SERIAL", "")
 
     server, actual_port = create_server(args.host, args.port)
     url = f"http://{args.host}:{actual_port}"

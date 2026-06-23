@@ -1,270 +1,378 @@
 # -*- encoding=utf8 -*-
 __author__ = "Xiaolei"
 
-from datetime import datetime
-from airtest.core.api import *
-from airtest.core.android import *
-from airtest.cli.parser import cli_setup
+import json
+import re
+import time
+from dataclasses import dataclass
+from pathlib import Path
+
+from airtest.core.api import exists, sleep, touch
+from airtest.core.cv import Template
 from poco.drivers.std import StdPoco
 
 poco = StdPoco()
+CF_DIR = Path(__file__).resolve().parent
+NODES_CONFIG_PATH = CF_DIR / "CF_nodes.json"
+
+
+@dataclass(frozen=True)
+class NodeSpec:
+    """Poco 节点定位定义，运行时通过 resolve() 获取真实节点。"""
+
+    root: str = None
+    chain: tuple = ()
+    desc: str = ""
+    query: dict = None
+
+    def resolve(self):
+        node = poco(**self.query) if self.query else poco(self.root)
+        for method, selector in self.chain:
+            if isinstance(selector, dict):
+                node = getattr(node, method)(**selector)
+            elif method == "index":
+                node = node[selector]
+            elif method == "child":
+                node = node.child(selector)
+            elif method == "offspring":
+                node = node.offspring(selector)
+            else:
+                raise ValueError(f"不支持的 Poco 节点链路方法: {method}")
+        return node
+
+    def text(self, default=""):
+        return _safe_text(self.resolve(), default)
+
+
+@dataclass(frozen=True)
+class ImageSpec:
+    """Airtest 图片模板定义，用于无法通过 Poco 稳定定位的图片按钮。"""
+
+    filename: str
+    record_pos: tuple = None
+    resolution: tuple = None
+    desc: str = ""
+
+    def resolve(self):
+        path = Path(self.filename)
+        if not path.is_absolute():
+            path = CF_DIR / path
+        return Template(str(path), record_pos=self.record_pos, resolution=self.resolution)
+
+
+def _load_node_config():
+    with NODES_CONFIG_PATH.open("r", encoding="utf-8") as file:
+        return json.load(file)
+
+
+NODE_CONFIG = _load_node_config()
+
+
+def _chain_from_config(chain):
+    return tuple((method, selector) for method, selector in chain or ())
+
+
+def _tuple_or_none(value):
+    return tuple(value) if value is not None else None
+
+
+def _spec_from_config(config):
+    if config.get("type") == "image":
+        return ImageSpec(
+            config["filename"],
+            record_pos=_tuple_or_none(config.get("record_pos")),
+            resolution=_tuple_or_none(config.get("resolution")),
+            desc=config.get("desc", ""),
+        )
+    return NodeSpec(
+        root=config.get("root"),
+        chain=_chain_from_config(config.get("chain")),
+        desc=config.get("desc", ""),
+        query=config.get("query"),
+    )
+
+
+def _load_group_specs(group_name):
+    return {
+        key: _spec_from_config(config)
+        for key, config in NODE_CONFIG.get(group_name, {}).items()
+    }
+
+
+def node_spec(group_name, key):
+    """获取 JSON 配置中的节点定义，适合脚本里按参数动态取节点。"""
+    try:
+        return _load_group_specs(group_name)[key]
+    except KeyError as exc:
+        raise KeyError(f"未找到节点配置: {group_name}.{key}") from exc
+
+
+def resolve_node(group_name, key):
+    """按 group/key 直接解析 Poco 节点或图片模板。"""
+    return node_spec(group_name, key).resolve()
+
+
+def node_text(group_name, key, default=""):
+    """按 group/key 读取节点文本。"""
+    return node_spec(group_name, key).text(default)
+
+
+def node_display_name(node):
+    node_text_value = str(node)
+    prefix = 'UIObjectProxy of "'
+    if node_text_value.startswith(prefix) and node_text_value.endswith('"'):
+        return node_text_value[len(prefix):-1]
+    return node_text_value
+
+
+def node_exists(node, timeout=None):
+    """兼容 Poco 节点、Airtest Template、布尔状态的存在性判断。"""
+    try:
+        if isinstance(node, bool):
+            return node
+        if hasattr(node, "exists"):
+            if timeout is None:
+                return node.exists()
+            end_time = time.time() + timeout
+            while time.time() < end_time:
+                if node.exists():
+                    return True
+                sleep(0.2)
+            return node.exists()
+        return bool(exists(node))
+    except Exception as e:
+        print(f"节点检查异常：{node_display_name(node)} | {e}")
+        return False
+
+
+def _safe_text(node, default="0"):
+    """安全读取节点文本，节点不存在或读取失败时返回默认值。"""
+    try:
+        return node.get_text() if node_exists(node) else default
+    except Exception as e:
+        print(f"获取节点文本失败: {e}")
+        return default
+
+
+def if_click(node, label=None, timeout=None):
+    """节点存在则点击，返回是否点击成功。"""
+    name = label or node_display_name(node)
+    if not node_exists(node, timeout=timeout):
+        print(f"节点不存在：{name}")
+        return False
+
+    try:
+        node.click()
+        print(f"点击节点成功：{name}")
+        return True
+    except AttributeError:
+        pos = exists(node)
+        if pos:
+            touch(pos)
+            print(f"点击图片成功：{name}")
+            return True
+    except Exception as e:
+        print(f"点击节点异常：{name} | {e}")
+    return False
+
+
+def _assign_config_nodes(target, group_name):
+    group_config = NODE_CONFIG.get(group_name, {})
+    group_specs = _load_group_specs(group_name)
+    for key, config in group_config.items():
+        node = group_specs[key].resolve()
+        attr = config.get("attr", key)
+        setattr(target, attr, node)
+        for alias in config.get("aliases", ()):
+            setattr(target, alias, node)
+
+
+def extract_number(text, default="0"):
+    """从 +100、9,999 这类文本中提取数字。"""
+    match = re.search(r"\d[\d,]*", text or "")
+    return match.group().replace(",", "") if match else default
+
+
+def extract_progress(text):
+    """从 12/25 这类文本中提取当前值和最大值。"""
+    match = re.search(r"(\d+)\s*/\s*(\d+)", text or "")
+    return match.groups() if match else ("0", "0")
+
 
 class common_nodes:
-    '''通用节点'''
+    """CF 节点入口。
+
+    节点定义统一维护在 CF_nodes.json。新增普通节点只需要加 JSON 配置；
+    需要兼容旧属性名时，在该条配置里写 attr 或 aliases。
+    """
+
+    safe_text = staticmethod(_safe_text)
+    node_spec = staticmethod(node_spec)
+    resolve_node = staticmethod(resolve_node)
+    node_text = staticmethod(node_text)
+
     def __init__(self):
-        self.btn_close = poco("btn_close")  # 通用关闭按钮1
-        self.close_btn = poco("close_btn")  # 通用关闭按钮2
-        
+        _assign_config_nodes(self, "common")
 
     class lobby_footer_nodes:
-        '''大厅 Lobby Footer 节点'''
+        """大厅 Lobby Footer 节点。"""
+
         def __init__(self):
-            # 定义大厅中 mission pass 功能对应的图标节点
-            self.lobby_mp_icon = poco("mission_pass_node")
-            # 定义大厅中每日任务面板功能对应的图标节点
-            self.lobby_mission_icon = poco("dashboard_node")
-            # 定义大厅中 A 设置功能对应的图标节点
-            self.lobby_Aset_icon = poco("a_set_node")
-            # 定义大厅中 成就 功能对应的图标节点
-            self.lobby_royal_icon = poco("royal_node")
-            # 定义大厅中 公会 功能对应的图标节点
-            self.lobby_club_icon = poco("club_node")
-            # 定义大厅中 inbox 功能对应的图标节点
-            self.lobby_inbox_icon = poco("inbox_node")
-            # 定义大厅中 B级 默认功能对应的图标节点
-            self.lobby_B_icon = poco("bDefault_node")
-            # 定义大厅中 每日分享 功能对应的图标节点
-            self.lobby_Share_icon = poco("dailyShare_node")
-            # 定义大厅中 小游戏中心 功能对应的图标节点
-            self.lobby_game_center_icon = poco("game_center_node")
-            # 定义大厅中 高级房 功能对应的图标节点
-            self.lobby_lounge_icon = poco("lobby_node")
-            # 定义大厅中 VIP 功能对应的图标节点
-            self.lobby_vip_icon = poco("vip_node")
-            # 定义大厅中 Cash Go 功能对应的图标节点
-            self.lobby_Cash_Go_icon = poco("cash_go_node")
-            # 定义大厅中 mansion quest 功能对应的图标节点
-            self.lobby_mansion_icon = poco("mansion_node")
-            # 定义大厅中 Facebook 功能对应的图标节点
-            self.lobby_facebook_icon = poco("facebook_node")
-            # 定义大厅中 money 功能对应的图标节点
-            self.lobby_money_bank_icon = poco("money_bank_node")
-            # 定义大厅中 奖励中心 功能对应的图标节点
-            self.lobby_rewards_icon = poco("rewards_center_node")
-            # 定义大厅中 lobby入口展开按钮 对应的图标节点
-            self.lobby_middle_icon = poco("middle_node")
-            # 定义大厅中 活动中心 功能对应的图标节点
-            self.lobby_eao_icon = poco("eao_node")
-            # 定义大厅中 设置 功能对应的图标节点
-            self.lobby_setting_icon = poco("setting_node")
-            
+            _assign_config_nodes(self, "lobby")
 
     class B_activity:
-        '''B级模块节点'''
+        """B级模块节点。"""
+
         def cz(self):
-            '''B级CHALLENGE ZONE界面节点'''
-            self.archer = poco("b_list").child("main_item")[2].child("btn_choose")
-            self.bingo = poco("b_list").child("main_item")[0].child("btn_choose")
-            self.pick = poco("b_list").child("main_item")[1].child("btn_choose")
-            self.cooking = poco("b_list").child("main_item")[6].child("btn_choose")
-            self.makeover = poco("b_list").child("main_item")[3].child("btn_choose")
-            self.rocker = poco("b_list").child("main_item")[4].child("btn_choose")
-            self.plinko = poco("b_list").child("main_item")[5].child("btn_choose")
-            self.journey = poco("b_list").child("main_item")[8].child("btn_choose")
-            self.mow = poco("b_list").child("main_item")[9].child("btn_choose")
-            self.diamond = poco("b_list").child("main_item")[7].child("btn_choose")
-            self.tower = poco("b_list").child("main_item")[10].child("btn_choose")
-            self.coin_mania = poco("b_list").child("main_item")[11].child("btn_choose")
-            self.merge = poco("b_list").child("main_item")[12].child("btn_choose")
-            self.cz_b_pass = poco("pass_node")
-            self.cz_btn_rank = poco("btn_rank")
-            self.cz_b_store = poco("btn_b_store")
-            self.cz_get_b_token = poco("token_node").child(type="Label").get_text()
-            self.cz_play_btn = poco("btn_play")
+            _assign_config_nodes(self, "b_activity")
+            self.cz_get_b_token = node_text("b_activity", "token_label", "0")
             return self
+
         def b_archer(self):
             pass
+
         def b_bingo(self):
             pass
+
         def b_pick(self):
             pass
+
         def b_cooking(self):
             pass
+
         def b_makeover(self):
             pass
+
         def b_rocker(self):
             pass
+
         def b_plinko(self):
             pass
+
         def b_journey(self):
             pass
+
         def b_mow(self):
             pass
+
         def b_diamond(self):
             pass
+
         def b_tower(self):
             pass
+
         def b_coin_mania(self):
             pass
+
         def b_merge(self):
             pass
-    class mansion:
-        '''mansion 节点'''
-        def __init__(self):
-            # self.mansion_btn = poco("mansion_node") #
-            self.mansion_star_label = poco("star_label") # 刷子数量
-            self.mansion_task_btn = poco("task_btn") # PLAY按钮
-            self.mansion_bc_btn = poco("bc_btn") # BC按钮
-            
-            self.mansion_task_pop = poco("mansion_task_pop") # 房间奖励界面节点，用来判断是否在房间奖励界面
-            self.mansion_do_btn = poco("do_btn")  # 使用刷子建造
-            self.mansion_close_btn = poco("close_btn") # 房间奖励界面关闭按钮
-            
-            self.mansion_item_btn = poco("item_btn") # 三选一，选择一个装饰
-            self.mansion_ensure_btn = poco("btn_ensure") # 三选一确认
-            self.mansion_cancel_btn = poco("btn_cancel") # 三选一取消
-            
-            self.mansion_dialog_btn = poco("dialog_btn") # 剧情对话按钮
-    class mission_pass:
-        '''mission pass 节点'''
-        def __init__(self):
-            pass
-    class a_steamp:
-        '''A级 邮票 节点'''
-        def __init__(self):
-            pass
-    class a_byd:
-        '''A级  byg 节点'''
-        def __init__(self):
-            pass
-    class a_atw:
-        '''A级  atw 节点'''
-        def __init__(self):
-            pass
-    class a_royal:
-        '''成就 节点'''
-        def __init__(self):
-            pass
-    class cashgo:
-        '''cash go 节点'''
-        def cg_build(self):
-            self.btnClose = poco("btnClose")  # cash go 弹窗关闭按钮
-            self.btnBuild = poco("btnBuild")  # cash go 建造按钮
-            self.btnShare = poco("btnShare")  # 小岛完成后的分享按钮
-            self.cg_btn_spin = poco("btn_spin")  # spin按钮
-            self.cg_btn_add = poco("btn_add")  # bet +
-            self.cg_btn_rud = poco("btn_rud")  # bet -
-            self.build_btn = poco("nd_btn_build")
-            self.ft_build_icon = poco("nd_create").child(type="Layout")
-            self.ft_build_btn = poco("btnFix")
-            self.ft_build_coin = poco("btnFix")
-            self.ft_build_coin_btn = poco("btnFix")
-            self.ft_build_coin_9999 = poco(nameMatches=".*bflPrice",textMatches="9,999")
-            return self
-    
-class objects:
-    '''封装的一些判断函数'''
-    def if_exists(self, name):
-        """
-        检查指定 UI 节点是否存在，若存在则进行点击操作。
 
-        :param name: 待检查的 UI 节点对象
-        """
-        # 获取传入节点对象的名称
-        jd_name = name.get_name()
-        # 检查指定名称的节点是否存在，设置超时时间为 3 秒
-        exists(jd_name, timeout=3)
-        # 若节点存在，点击该节点
-        jd_name.click()
+    class mansion:
+        """mansion 节点。"""
+
+        def __init__(self):
+            _assign_config_nodes(self, "mansion")
+
+    class mission_pass:
+        """mission pass 节点。"""
+
+        def __init__(self):
+            pass
+
+    class a_steamp:
+        """A级 邮票 节点。"""
+
+        def __init__(self):
+            pass
+
+    class a_byd:
+        """A级 byg 节点。"""
+
+        def __init__(self):
+            pass
+
+    class a_atw:
+        """A级 atw 节点。"""
+
+        def __init__(self):
+            pass
+
+    class a_royal:
+        """成就 节点。"""
+
+        def __init__(self):
+            pass
+
+    class cashgo:
+        """Cash Go 节点。"""
+
+        def cg_build(self):
+            _assign_config_nodes(self, "cashgo")
+            self.cg_build_progress_text = node_text("cashgo", "build_progress_label", "0/0")
+            self.cg_build_progress_current, self.cg_build_progress_max = extract_progress(
+                self.cg_build_progress_text
+            )
+            return self
+
+
+class objects:
+    """封装的一些判断函数，兼容旧脚本调用。"""
+
+    def if_exists(self, name):
+        return node_exists(name, timeout=3)
 
     def if_click(self, name):
-        """
-        判断节点是否存在，若存在则点击该节点并返回 True; 若不存在则返回 False。
+        return if_click(name)
 
-        :param name: 要检查和点击的 UI 节点对象
-        :return: 节点存在返回 True, 不存在返回 False
-        """
-        # 判断节点是否存在
-        if name.exists():
-            # 若节点存在，执行点击操作
-            name.click()
-            # 返回 True 表示节点存在且已点击
-            return True
-
-
-    
-
-
-
-
-
-# ============================================================
-# 工具类 (可被 CF_test.py 和其他模块复用)
-# ============================================================
 
 class GameActions:
-    """游戏通用操作封装"""
-    
-    def __init__(self, poco):
-        self.poco = poco
-    
+    """游戏通用操作封装。"""
+
+    def __init__(self, poco_driver=None):
+        self.poco = poco_driver or poco
+
     def click_node(self, node, timeout=2):
-        """安全点击节点，存在则点击并返回True，否则返回False"""
-        if node.exists(timeout=timeout):
-            node.click()
-            return True
-        return False
-    
+        return if_click(node, timeout=timeout)
+
     def wait_for_node(self, node, timeout=10, interval=0.5):
-        """等待节点出现"""
         end_time = time.time() + timeout
         while time.time() < end_time:
-            if node.exists():
+            if node_exists(node):
                 return True
             sleep(interval)
         return False
-    
+
     def safe_click_by_name(self, node_name, timeout=3):
-        """通过节点名称安全点击"""
         try:
-            node = self.poco(node_name)
-            return self.click_node(node, timeout)
+            return self.click_node(self.poco(node_name), timeout=timeout)
         except Exception as e:
-            print(f"❌ 点击 {node_name} 失败: {e}")
+            print(f"点击 {node_name} 失败: {e}")
             return False
-    
+
     def swipe_center_to(self, target_node, duration=0.3):
-        """从屏幕中心滑动到目标节点"""
         from airtest.utils.snake import Screen  # pyright: ignore[reportMissingImports]
+
         screen = Screen()
         center = (screen.width / 2, screen.height / 2)
         target_pos = target_node.get_touch_point()
         self.poco.swipe_vector((target_pos[0] - center[0], target_pos[1] - center[1]), duration=duration)
-    
+
     def get_label_text(self, label_node):
-        """安全获取标签文本"""
-        try:
-            if label_node.exists():
-                return label_node.get_text()
-        except Exception:
-            pass
-        return ""
-    
+        return _safe_text(label_node, "")
+
     def close_all_common_popups(self, max_tries=3):
-        """关闭所有常见弹窗"""
         closed = False
         for _ in range(max_tries):
             clicked = False
-            for name in ["btn_close", "close_btn", "btnClose"]:
-                try:
-                    node = self.poco(name)
-                    if node.exists():
-                        node.click()
-                        sleep(0.2)
-                        clicked = True
-                        closed = True
-                except Exception:
-                    pass
+            for feature in (
+                ("common", "btn_close"),
+                ("common", "close_btn"),
+                ("cashgo", "btn_close"),
+            ):
+                if if_click(resolve_node(*feature), label=f"{feature[0]}.{feature[1]}"):
+                    sleep(0.2)
+                    clicked = True
+                    closed = True
             if not clicked:
                 break
         return closed

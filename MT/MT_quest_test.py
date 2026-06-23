@@ -29,7 +29,8 @@ APP_PACKAGE = MT_main.APP_PACKAGE
 MANAGE_APP_LIFECYCLE = MT_main.MANAGE_APP_LIFECYCLE
 GUILD_NAME = "GGboy"
 GUILD_MESSAGE = "hello"
-NODE_DUMP_DIR = Path(__file__).resolve().parent / "node_dumps"
+PROJECT_ROOT = Path(__file__).resolve().parents[1]
+NODE_DUMP_DIR = PROJECT_ROOT / "node_dumps"
 SCREENSHOT_DIR = Path(__file__).resolve().parent / "screenshots"
 
 

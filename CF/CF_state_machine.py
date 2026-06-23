@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
-"""MT 轻量状态机。
+"""CF 轻量状态机。
 
-第一版目标：复用 MT_nodes.json 中的节点定义识别页面状态，并把通用弹窗处理、
+复用 CF_nodes.json 中的节点定义识别页面状态，并把通用弹窗处理、
 状态等待和 UNKNOWN 现场留证据收口到一个模块里。
 """
 
@@ -14,15 +14,15 @@ from pathlib import Path
 
 from airtest.core.api import sleep, snapshot
 
-import MT_nodes
-from MT_main import if_click, node_exists
+import CF_nodes
+from CF_nodes import if_click, node_exists
 
 
-MT_DIR = Path(__file__).resolve().parent
-PROJECT_ROOT = MT_DIR.parent
-STATES_CONFIG_PATH = MT_DIR / "MT_states.json"
-STATE_DUMP_DIR = PROJECT_ROOT / "node_dumps" / "MT" / "state_machine"
-SCREENSHOT_DIR = MT_DIR / "screenshots"
+CF_DIR = Path(__file__).resolve().parent
+PROJECT_ROOT = CF_DIR.parent
+STATES_CONFIG_PATH = CF_DIR / "CF_states.json"
+STATE_DUMP_DIR = PROJECT_ROOT / "node_dumps" / "CF" / "state_machine"
+SCREENSHOT_DIR = CF_DIR / "screenshots"
 
 
 @dataclass(frozen=True)
@@ -44,12 +44,14 @@ def _safe_filename(value):
     return re.sub(r"[^0-9A-Za-z_\u4e00-\u9fa5-]+", "_", value).strip("_") or "unknown"
 
 
-class MTStateMachine:
-    """基于节点特征的最小可用状态机。"""
+class CFStateMachine:
+    """基于节点特征的 CF 最小可用状态机。"""
 
     def __init__(self, config_path=STATES_CONFIG_PATH, poco_driver=None):
         self.config_path = Path(config_path)
-        self.poco = poco_driver or MT_nodes.poco
+        if poco_driver is not None:
+            CF_nodes.poco = poco_driver
+        self.poco = poco_driver or CF_nodes.poco
         self.state_config = self.load_config()
         self.last_state = StateMatch("UNKNOWN")
 
@@ -59,13 +61,13 @@ class MTStateMachine:
 
     def resolve_feature(self, feature):
         group_name, key = feature
-        return MT_nodes.resolve_node(group_name, key)
+        return CF_nodes.resolve_node(group_name, key)
 
     def feature_exists(self, feature):
         try:
             return node_exists(self.resolve_feature(feature))
         except Exception as e:
-            print(f"⚠️ 状态特征检查失败：{feature} | {e}")
+            print(f"状态特征检查失败：{feature} | {e}")
             return False
 
     def detect_state(self, verbose=False):
@@ -101,7 +103,7 @@ class MTStateMachine:
 
         if verbose:
             print(
-                f"📍 当前状态：{self.last_state.name} "
+                f"当前状态：{self.last_state.name} "
                 f"({self.last_state.hits}/{self.last_state.total}) "
                 f"{list(self.last_state.matched_features)}"
             )
@@ -111,21 +113,20 @@ class MTStateMachine:
         try:
             return if_click(self.resolve_feature(feature), label=label)
         except Exception as e:
-            print(f"⚠️ 状态机点击失败：{feature} | {e}")
+            print(f"状态机点击失败：{feature} | {e}")
             return False
 
     def recover_blockers(self, max_tries=3):
         """处理通用弹窗/遮罩，返回是否处理过阻塞。"""
         recovered = False
         blocker_actions = (
-            ("main", "news_message_close_btn"),
-            ("guild", "guild_collect_btn"),
+            ("cashgo", "collect_btn"),
+            ("common", "btn_collect"),
+            ("cashgo", "btn_close"),
             ("common", "btn_close"),
             ("common", "close_btn"),
             ("common", "mask_close"),
-            ("common", "btn_collect"),
             ("common", "btn_confirm"),
-            ("common", "tap_to_continue"),
         )
 
         for _ in range(max_tries):
@@ -179,14 +180,14 @@ class MTStateMachine:
         file_path = SCREENSHOT_DIR / f"{datetime.now().strftime('%Y%m%d_%H%M%S')}_{_safe_filename(reason)}.png"
         try:
             snapshot(filename=str(file_path), msg=reason)
-            print(f"✅ 状态机截图：{file_path}")
+            print(f"状态机截图：{file_path}")
             return str(file_path)
         except Exception as e:
-            print(f"❌ 状态机截图失败：{reason} | {e}")
+            print(f"状态机截图失败：{reason} | {e}")
             return None
 
     def dump_unknown(self, reason="unknown_state", state=None):
-        """保存 UNKNOWN 或未达预期状态的截图和节点树，方便后续让 AI 反哺规则。"""
+        """保存 UNKNOWN 或未达预期状态的截图和节点树，方便后续反哺规则。"""
         STATE_DUMP_DIR.mkdir(parents=True, exist_ok=True)
         state = state or self.detect_state()
         screenshot_path = self.capture_screen(reason)
@@ -195,7 +196,7 @@ class MTStateMachine:
         try:
             hierarchy = self.poco.agent.hierarchy.dump()
         except Exception as e:
-            print(f"❌ 状态机节点树导出失败：{e}")
+            print(f"状态机节点树导出失败：{e}")
             hierarchy = None
 
         data = {
@@ -208,9 +209,9 @@ class MTStateMachine:
         }
         with file_path.open("w", encoding="utf-8") as file:
             json.dump(data, file, ensure_ascii=False, indent=2, default=str)
-        print(f"✅ 状态机已导出现场：{file_path}")
+        print(f"状态机已导出现场：{file_path}")
         return file_path
 
 
 def create_state_machine(poco_driver=None):
-    return MTStateMachine(poco_driver=poco_driver)
+    return CFStateMachine(poco_driver=poco_driver)

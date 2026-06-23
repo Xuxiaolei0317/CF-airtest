@@ -13,6 +13,7 @@ cf-airtest/
 ├── requirements.txt             # Python 依赖
 ├── node_generator_web.py        # 本地 Poco 节点生成网页工具
 ├── poco_node_listener_web.py    # PocoDebug 点击日志网页监听工具
+├── node_dumps/                  # Poco 节点转储数据
 ├── CF/                          # Cash Frenzy 测试模块
 │   ├── __init__.py
 │   ├── CF_nodes.py              # CF 节点定义
@@ -29,8 +30,7 @@ cf-airtest/
 │   ├── MT_test.py               # MT 测试用例入口/示例
 │   ├── MT_new_user.py           # MT 新用户流程脚本
 │   ├── MT_node_maintenance.py   # MT 节点维护测试
-│   ├── MT_quest_test.py         # MT 任务测试
-│   └── node_dumps/              # Poco 节点转储数据
+│   └── MT_quest_test.py         # MT 任务测试
 ├── node_manager/                # 节点库管理与 Poco 节点导出工具
 │   ├── __init__.py
 │   ├── base.py                  # 截图、节点树导出和层级展平工具

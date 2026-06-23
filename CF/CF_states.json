@@ -1,0 +1,70 @@
+{
+  "POPUP_BLOCKING": {
+    "desc": "通用弹窗或遮罩阻塞",
+    "priority": 100,
+    "min_hits": 1,
+    "features": [
+      ["common", "btn_close"],
+      ["common", "close_btn"],
+      ["common", "btn_confirm"],
+      ["common", "mask_close"],
+      ["cashgo", "btn_close"],
+      ["cashgo", "build_finish_dialog"],
+      ["cashgo", "build_chest_dialog"]
+    ]
+  },
+  "THEME_HOME": {
+    "desc": "主题大厅主界面",
+    "priority": 90,
+    "min_hits": 1,
+    "features": [
+      ["theme", "theme_sub_btn"],
+      ["theme", "theme_add_btn"],
+      ["theme", "theme_totalbet_label"],
+      ["theme", "theme_label_win"]
+    ]
+  },
+  "CASH_GO_OOC": {
+    "desc": "Cash Go 金币不足或商店购买界面",
+    "priority": 90,
+    "min_hits": 1,
+    "features": [
+      ["cashgo", "ooc_popup"],
+      ["cashgo", "shop_price_9999"],
+      ["cashgo", "buy_btn"],
+      ["cashgo", "prize_label"]
+    ]
+  },
+  "CASH_GO_COMPLETE": {
+    "desc": "Cash Go 小岛完成或奖励可领取",
+    "priority": 80,
+    "min_hits": 1,
+    "features": [
+      ["cashgo", "share_btn"],
+      ["cashgo", "collect_btn"]
+    ]
+  },
+  "CASH_GO_BUILD": {
+    "desc": "Cash Go 建造界面",
+    "priority": 70,
+    "min_hits": 1,
+    "features": [
+      ["cashgo", "build_btn"],
+      ["cashgo", "build_progress_label"],
+      ["cashgo", "spin_btn"],
+      ["cashgo", "build_tab_btn"]
+    ]
+  },
+  "LOBBY_HOME": {
+    "desc": "CF 大厅主界面",
+    "priority": 50,
+    "min_hits": 2,
+    "features": [
+      ["lobby", "cash_go"],
+      ["lobby", "setting"],
+      ["lobby", "middle"],
+      ["lobby", "b_default"],
+      ["lobby", "mansion"]
+    ]
+  }
+}
