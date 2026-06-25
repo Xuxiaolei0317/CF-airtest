@@ -14,17 +14,12 @@ sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
 from airtest_booststrap import dev, poco
 
 from MT_main import GameActions, LaunchActions
-from MT_nodes import common_nodes as mt_nodes
 from MT_state_machine import create_state_machine
 
 
 GA = GameActions(poco)
 LA = LaunchActions(dev, poco_driver=poco)
 SM = create_state_machine(poco)
-
-
-def main_nodes():
-    return mt_nodes.mt_main()
 
 
 def enter_guild_by_state():
@@ -35,7 +30,7 @@ def enter_guild_by_state():
 
     result = SM.go_to(
         {"GUILD_HOME", "GUILD_NOT_JOINED"},
-        action=lambda: GA.click_node(main_nodes().mt_ft_guild_friend),
+        action=lambda: GA.click("main.footer_guild_friend"),
         timeout=10,
     )
 

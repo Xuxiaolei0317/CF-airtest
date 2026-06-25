@@ -79,8 +79,23 @@ python run_tests.py --serial YOUR_DEVICE_ID
 MT 项目约定：
 
 - `MT_nodes.py`：只维护 MT 项目所有节点信息，包括主界面、slot、build、guild、stamp、store、quest 等节点分组，以及必要的旧字段兼容别名。
-- `MT_main.py`：维护 MT 项目对应模块的方法和通用函数，包括启动/关闭游戏、Poco 重连、节点点击、文本读取、数值转换、弹窗关闭、spin/build/attack/steal/quest 等流程方法。
-- `MT_*.py` 测试脚本：只放具体测试用例或场景编排，通过导入 `MT_nodes.py` 的节点和 `MT_main.py` 的方法来执行。
+- `MT_main.py`：维护 MT 项目对应模块的方法和通用函数，包括启动/关闭游戏、Poco 重连、点号路径节点点击、文本读取、数值转换、弹窗关闭、spin/build/attack/steal/quest 等流程方法。
+- `MT_*.py` 测试脚本：只放具体测试用例或场景编排，优先通过 `MT_main.py` 的 `GameActions` 点号路径入口执行。
+
+CF / MT 节点引用统一约定：
+
+- 节点配置 API 只使用 `group.key` 点号路径，例如 `theme.theme_totalbet_label`、`main.footer_spin`。
+- `CF_nodes.py` / `MT_nodes.py` 的 `node_spec()`、`resolve_node()`、`node_text()` 都只接收点号路径，不再使用 `group, key` 两个参数。
+- 状态机 JSON 的 `features` 也只写点号路径字符串，不再写 `["group", "key"]` 数组。
+- `common_nodes` 只作为节点类入口，复杂流程脚本优先使用 `GameActions` 的点号路径方法。
+
+CF / MT 测试脚本优先使用 `GameActions` 的点号路径快捷入口：
+
+```python
+game_actions.click("theme.theme_totalbet_label")
+bet_text = game_actions.text("theme.theme_totalbet_label")
+bet_num = game_actions.extract_number(bet_text)
+```
 
 ## 功能模块的自动化脚本命名规则
 

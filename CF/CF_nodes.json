@@ -27,7 +27,8 @@
     "middle": {"root": "middle_node", "attr": "lobby_middle_icon", "desc": "大厅入口展开按钮"},
     "eao": {"root": "eao_node", "attr": "lobby_eao_icon", "desc": "活动中心入口"},
     "setting": {"root": "setting_node", "attr": "lobby_setting_icon", "desc": "设置入口"},
-    "level_label": {"root":"header","chain":[["child","exp_node"],["child","level_label"]],"desc":"等级文本"}
+    "level_label": {"root":"header","chain":[["child","exp_node"],["child","level_label"]],"desc":"等级文本"},
+    "coins_label": {"root":"header","chain":[["child","coins_node"],["child","coins_label"]],"desc":"等级文本"}
   },
   "cashgo": {
     "btn_close": {"root": "btnClose", "attr": "btnClose", "desc": "Cash Go 弹窗关闭按钮"},
@@ -91,7 +92,7 @@
     "theme_touch_node": {"root": "loading_b", "desc": "主题选bet界面，喜欢按钮", "chain": [["child", "root"], ["child", "touchNode"]]},
     "theme_sub_btn": {"root":"footer","desc":"主题bet减号按钮","chain":[["child","totalbet_node"],["child","sub_btn"]]},
     "theme_add_btn": {"root":"footer","desc":"主题bet加号按钮","chain":[["child","totalbet_node"],["child","add_btn"]]},
-    "theme_totalbet_label": {"root":"footer","desc":"主题bet文本","chain":[["child","totalbet_node"],["child","totalbet_label"]]},
+    "theme_bet_label": {"root":"footer","desc":"主题bet文本","chain":[["child","totalbet_node"],["child","totalbet_label"]]},
     "theme_label_win": {"root":"totalwin_node","desc":"主题总赢分文本","chain":[["child","win_node"],["child","label_win"]]},
     "theme_node_start": {"root":"map_free", "chain": [["child","root"],["child", "node_start"]], "desc": "122map"}
   },

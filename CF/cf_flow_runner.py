@@ -46,7 +46,7 @@ class FlowRunner:
 
     def click_feature(self, feature, expected_states=None, timeout=10):
         def action():
-            if not self.state_machine.click_feature(feature, label=f"{feature[0]}.{feature[1]}"):
+            if not self.state_machine.click_feature(feature, label=feature):
                 return False
             if not expected_states:
                 return True

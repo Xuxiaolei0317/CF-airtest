@@ -423,6 +423,18 @@ class GameActions:
     def click_node(self, node, timeout=2):
         return if_click(node, timeout=timeout)
 
+    def node(self, path):
+        """通过 group.key 点号路径获取节点对象。"""
+        return MT_nodes.resolve_node(path)
+
+    def text(self, path, default=""):
+        """通过 group.key 点号路径读取节点文本。"""
+        return MT_nodes.node_text(path, default)
+
+    def click(self, path, timeout=2):
+        """通过 group.key 点号路径点击节点。"""
+        return self.click_node(self.node(path), timeout=timeout)
+
     def wait_for_node(self, node, timeout=10, interval=0.5):
         end_time = time.time() + timeout
         while time.time() < end_time:

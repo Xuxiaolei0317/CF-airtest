@@ -119,22 +119,34 @@ _add_spec_alias(SLOT_NODES, "btn_spin", "spin_btn")
 _add_spec_alias(MAIN_NODES, "btn_sud", "btn_sub")
 
 
-def node_spec(group_name, key):
-    """获取 JSON 配置中的节点定义，适合脚本里按参数动态取节点。"""
+def _split_node_path(path):
+    """统一解析 group.key 点号路径。"""
+    if not isinstance(path, str) or "." not in path:
+        raise ValueError("节点路径需使用 'group.key' 格式")
+
+    group_name, node_key = path.split(".", 1)
+    if not group_name or not node_key:
+        raise ValueError(f"无效节点路径: {path}")
+    return group_name, node_key
+
+
+def node_spec(path):
+    """获取 JSON 配置中的节点定义，统一使用 group.key 点号路径。"""
+    group_name, key = _split_node_path(path)
     try:
         return _load_group_specs(group_name)[key]
     except KeyError as exc:
-        raise KeyError(f"未找到节点配置: {group_name}.{key}") from exc
+        raise KeyError(f"未找到节点配置: {path}") from exc
 
 
-def resolve_node(group_name, key):
-    """按 group/key 直接解析 Poco 节点或图片模板。"""
-    return node_spec(group_name, key).resolve()
+def resolve_node(path):
+    """按 group.key 点号路径直接解析 Poco 节点或图片模板。"""
+    return node_spec(path).resolve()
 
 
-def node_text(group_name, key, default=""):
-    """按 group/key 读取节点文本。"""
-    return node_spec(group_name, key).text(default)
+def node_text(path, default=""):
+    """按 group.key 点号路径读取节点文本。"""
+    return node_spec(path).text(default)
 
 
 def _safe_text(node, default="0"):
@@ -225,7 +237,7 @@ class common_nodes:
 
     def __init__(self):
         _assign_config_nodes(self, "common")
-        self.letsplay_btn = resolve_node("new_user", "letsplay_btn")
+        self.letsplay_btn = resolve_node("new_user.letsplay_btn")
         _assign_slot_nodes(self)
 
     class mt_main():
@@ -233,14 +245,14 @@ class common_nodes:
 
         def __init__(self):
             _assign_config_nodes(self, "main")
-            self.mt_Tapto = resolve_node("common", "tap_to_continue")
+            self.mt_Tapto = resolve_node("common.tap_to_continue")
 
-            self.mt_hd_coin_num = node_text("main", "header_coin_label", "0")
-            self.mt_hd_bill_num = node_text("main", "header_bill_label", "0")
-            shield_text = node_text("main", "header_shield_label", "0")
+            self.mt_hd_coin_num = node_text("main.header_coin_label", "0")
+            self.mt_hd_bill_num = node_text("main.header_bill_label", "0")
+            shield_text = node_text("main.header_shield_label", "0")
             self.mt_hd_shield_num = shield_text[0] if shield_text else "0"
 
-            self.mt_loginbonus_progress_text = node_text("main", "login_bonus_progress", "0/0")
+            self.mt_loginbonus_progress_text = node_text("main.login_bonus_progress", "0/0")
             self.mt_loginbonus_progress_current, self.mt_loginbonus_progress_max = extract_progress(
                 self.mt_loginbonus_progress_text
             )
@@ -258,8 +270,8 @@ class common_nodes:
 
         def __init__(self):
             _assign_config_nodes(self, "build")
-            self.mt_main_coin_collect = node_text("build", "coin_collect_label", "0")
-            self.mt_main_coin_cost = node_text("build", "coin_cost_label", "0")
+            self.mt_main_coin_collect = node_text("build.coin_collect_label", "0")
+            self.mt_main_coin_cost = node_text("build.coin_cost_label", "0")
             self.mt_build_action_candidates = (
                 self.mt_main_coin_cost_btn,
                 self.mt_build_upgrade_btn,
@@ -283,7 +295,7 @@ class common_nodes:
 
         def __init__(self):
             _assign_config_nodes(self, "new_user")
-            self.new_user_guide_word_text = node_text("new_user", "new_user_guide_word_label", "0")
+            self.new_user_guide_word_text = node_text("new_user.new_user_guide_word_label", "0")
 
     mt_guide = mt_new_user_guide
 
@@ -292,7 +304,7 @@ class common_nodes:
 
         def __init__(self):
             _assign_config_nodes(self, "quest")
-            self.quest_index_text = node_text("quest", "quest_index_label", "0")
+            self.quest_index_text = node_text("quest.quest_index_label", "0")
 
     class mt_guild():
         """MT 公会/好友节点"""
@@ -309,7 +321,7 @@ class common_nodes:
             self.guild_join_candidates = (
                 self.guild_join_btn,
                 self.guild_apply_btn,
-                resolve_node("common", "btn_collect"),
+                resolve_node("common.btn_collect"),
             )
 
     mt_club = mt_guild

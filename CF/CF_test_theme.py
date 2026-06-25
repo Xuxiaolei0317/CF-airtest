@@ -13,7 +13,7 @@ from airtest_booststrap import ST, poco
 
 # 导入节点和状态机
 import CF_nodes
-from CF_nodes import GameActions, common_nodes
+from CF_nodes import GameActions
 from CF_state_machine import create_state_machine
 
 # 打开截图功能
@@ -27,11 +27,6 @@ game_actions = GameActions(poco)
 state_machine = create_state_machine(poco)
 
 
-def lobby_nodes():
-    return common_nodes.lobby_footer_nodes()
-
-
-
 def enter_theme_by_state():
     """按状态机方式进入，并判断最终落在哪个页面。"""
     state_machine.recover_blockers()
@@ -42,16 +37,18 @@ def enter_theme_by_state():
 
     if state.name == "LOBBY_HOME":
         return state_machine.go_to(
-            {"CASH_GO_BUILD", "CASH_GO_COMPLETE", "CASH_GO_OOC"},
-            action=lambda: game_actions.click_node(lobby_nodes().lobby_Cash_Go_icon),
+            {"THEME_HOME"},
+            action=lambda: game_actions.click_lobby_theme(122),
             timeout=10,
         )
-
-    state_machine.dump_unknown("before_enter_cash_go", state=state)
     return state
 
 
 if __name__ == "__main__":
     log("==== start ====")
-    game_actions.click_lobby_theme(122)
+    # 使用lua脚本进入某个主题
+    # game_actions.click_lobby_theme(122)
+    # 测试脚本优先使用 GameActions 的点号路径入口，减少 group/key 参数重复。
+    theme_bet_label = game_actions.text("theme.theme_totalbet_label")
+    print(game_actions.extract_number(theme_bet_label))
     log("==== end ====")

@@ -60,8 +60,7 @@ class CFStateMachine:
             return json.load(file)
 
     def resolve_feature(self, feature):
-        group_name, key = feature
-        return CF_nodes.resolve_node(group_name, key)
+        return CF_nodes.resolve_node(feature)
 
     def feature_exists(self, feature):
         try:
@@ -76,9 +75,9 @@ class CFStateMachine:
         for state_name, config in self.state_config.items():
             features = config.get("features", [])
             matched = tuple(
-                f"{group}.{key}"
-                for group, key in features
-                if self.feature_exists((group, key))
+                feature
+                for feature in features
+                if self.feature_exists(feature)
             )
             min_hits = int(config.get("min_hits", 1))
             if len(matched) >= min_hits:
@@ -120,13 +119,13 @@ class CFStateMachine:
         """处理通用弹窗/遮罩，返回是否处理过阻塞。"""
         recovered = False
         blocker_actions = (
-            ("cashgo", "collect_btn"),
-            ("common", "btn_collect"),
-            ("cashgo", "btn_close"),
-            ("common", "btn_close"),
-            ("common", "close_btn"),
-            ("common", "mask_close"),
-            ("common", "btn_confirm"),
+            "cashgo.collect_btn",
+            "common.btn_collect",
+            "cashgo.btn_close",
+            "common.btn_close",
+            "common.close_btn",
+            "common.mask_close",
+            "common.btn_confirm",
         )
 
         for _ in range(max_tries):
@@ -136,7 +135,7 @@ class CFStateMachine:
 
             clicked = False
             for feature in blocker_actions:
-                if self.click_feature(feature, label=f"blocker:{feature[0]}.{feature[1]}"):
+                if self.click_feature(feature, label=f"blocker:{feature}"):
                     sleep(0.5)
                     clicked = True
                     recovered = True

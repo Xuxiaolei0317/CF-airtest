@@ -58,8 +58,7 @@ class MTStateMachine:
             return json.load(file)
 
     def resolve_feature(self, feature):
-        group_name, key = feature
-        return MT_nodes.resolve_node(group_name, key)
+        return MT_nodes.resolve_node(feature)
 
     def feature_exists(self, feature):
         try:
@@ -74,9 +73,9 @@ class MTStateMachine:
         for state_name, config in self.state_config.items():
             features = config.get("features", [])
             matched = tuple(
-                f"{group}.{key}"
-                for group, key in features
-                if self.feature_exists((group, key))
+                feature
+                for feature in features
+                if self.feature_exists(feature)
             )
             min_hits = int(config.get("min_hits", 1))
             if len(matched) >= min_hits:
@@ -118,14 +117,14 @@ class MTStateMachine:
         """处理通用弹窗/遮罩，返回是否处理过阻塞。"""
         recovered = False
         blocker_actions = (
-            ("main", "news_message_close_btn"),
-            ("guild", "guild_collect_btn"),
-            ("common", "btn_close"),
-            ("common", "close_btn"),
-            ("common", "mask_close"),
-            ("common", "btn_collect"),
-            ("common", "btn_confirm"),
-            ("common", "tap_to_continue"),
+            "main.news_message_close_btn",
+            "guild.guild_collect_btn",
+            "common.btn_close",
+            "common.close_btn",
+            "common.mask_close",
+            "common.btn_collect",
+            "common.btn_confirm",
+            "common.tap_to_continue",
         )
 
         for _ in range(max_tries):
@@ -135,7 +134,7 @@ class MTStateMachine:
 
             clicked = False
             for feature in blocker_actions:
-                if self.click_feature(feature, label=f"blocker:{feature[0]}.{feature[1]}"):
+                if self.click_feature(feature, label=f"blocker:{feature}"):
                     sleep(0.5)
                     clicked = True
                     recovered = True

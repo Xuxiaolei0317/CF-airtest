@@ -27,16 +27,12 @@ game_actions = GameActions(poco)
 state_machine = create_state_machine(poco)
 
 
-def lobby_nodes():
-    return common_nodes.lobby_footer_nodes()
-
-
 def cashgo_nodes():
     return common_nodes.cashgo().cg_build()
 
 
 def enter_cash_go_by_state():
-    """按 MT 状态机方式进入 Cash Go，并判断最终落在哪个 Cash Go 页面。"""
+    """按状态机方式进入 Cash Go，并判断最终落在哪个 Cash Go 页面。"""
     state_machine.recover_blockers()
     state = state_machine.detect_state(verbose=True)
 
@@ -46,7 +42,7 @@ def enter_cash_go_by_state():
     if state.name == "LOBBY_HOME":
         return state_machine.go_to(
             {"CASH_GO_BUILD", "CASH_GO_COMPLETE", "CASH_GO_OOC"},
-            action=lambda: game_actions.click_node(lobby_nodes().lobby_Cash_Go_icon),
+            action=lambda: game_actions.click("lobby.cash_go"),
             timeout=10,
         )
 

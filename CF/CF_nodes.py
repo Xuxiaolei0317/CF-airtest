@@ -99,22 +99,34 @@ def _load_group_specs(group_name):
     }
 
 
-def node_spec(group_name, key):
-    """获取 JSON 配置中的节点定义，适合脚本里按参数动态取节点。"""
+def _split_node_path(path):
+    """统一解析 group.key 点号路径。"""
+    if not isinstance(path, str) or "." not in path:
+        raise ValueError("节点路径需使用 'group.key' 格式")
+
+    group_name, node_key = path.split(".", 1)
+    if not group_name or not node_key:
+        raise ValueError(f"无效节点路径: {path}")
+    return group_name, node_key
+
+
+def node_spec(path):
+    """获取 JSON 配置中的节点定义，统一使用 group.key 点号路径。"""
+    group_name, key = _split_node_path(path)
     try:
         return _load_group_specs(group_name)[key]
     except KeyError as exc:
-        raise KeyError(f"未找到节点配置: {group_name}.{key}") from exc
+        raise KeyError(f"未找到节点配置: {path}") from exc
 
 
-def resolve_node(group_name, key):
-    """按 group/key 直接解析 Poco 节点或图片模板。"""
-    return node_spec(group_name, key).resolve()
+def resolve_node(path):
+    """按 group.key 点号路径直接解析 Poco 节点或图片模板。"""
+    return node_spec(path).resolve()
 
 
-def node_text(group_name, key, default=""):
-    """按 group/key 读取节点文本。"""
-    return node_spec(group_name, key).text(default)
+def node_text(path, default=""):
+    """按 group.key 点号路径读取节点文本。"""
+    return node_spec(path).text(default)
 
 
 def node_display_name(node):
@@ -188,9 +200,23 @@ def _assign_config_nodes(target, group_name):
 
 
 def extract_number(text, default="0"):
-    """从 +100、9,999 这类文本中提取数字。"""
-    match = re.search(r"\d[\d,]*", text or "")
-    return match.group().replace(",", "") if match else default
+    """从 +100、9,999、1,350,000K 这类文本中提取整数。"""
+    match = re.search(r"(\d[\d,]*)([KMBTQ]?)", text or "", re.IGNORECASE)
+    if not match:
+        return default
+
+    # 游戏数值会用单位缩写展示，这里统一换算成完整整数。
+    unit_multipliers = {
+        "": 1,
+        "K": 1_000,
+        "M": 1_000_000,
+        "B": 1_000_000_000,
+        "T": 1_000_000_000_000,
+        "Q": 1_000_000_000_000_000,
+    }
+    number = int(match.group(1).replace(",", ""))
+    multiplier = unit_multipliers[match.group(2).upper()]
+    return str(number * multiplier)
 
 
 def extract_progress(text):
@@ -227,8 +253,6 @@ class common_nodes:
     node_spec = staticmethod(node_spec)
     resolve_node = staticmethod(resolve_node)
     node_text = staticmethod(node_text)
-    run_lua = staticmethod(run_lua)
-    click_lobby_theme = staticmethod(click_lobby_theme)
 
     def __init__(self):
         _assign_config_nodes(self, "common")
@@ -238,53 +262,6 @@ class common_nodes:
 
         def __init__(self):
             _assign_config_nodes(self, "lobby")
-
-    class B_activity:
-        """B级模块节点。"""
-
-        def cz(self):
-            _assign_config_nodes(self, "b_activity")
-            self.cz_get_b_token = node_text("b_activity", "token_label", "0")
-            return self
-
-        def b_archer(self):
-            pass
-
-        def b_bingo(self):
-            pass
-
-        def b_pick(self):
-            pass
-
-        def b_cooking(self):
-            pass
-
-        def b_makeover(self):
-            pass
-
-        def b_rocker(self):
-            pass
-
-        def b_plinko(self):
-            pass
-
-        def b_journey(self):
-            pass
-
-        def b_mow(self):
-            pass
-
-        def b_diamond(self):
-            pass
-
-        def b_tower(self):
-            pass
-
-        def b_coin_mania(self):
-            pass
-
-        def b_merge(self):
-            pass
 
     class mansion:
         """mansion 节点。"""
@@ -327,21 +304,11 @@ class common_nodes:
 
         def cg_build(self):
             _assign_config_nodes(self, "cashgo")
-            self.cg_build_progress_text = node_text("cashgo", "build_progress_label", "0/0")
+            self.cg_build_progress_text = node_text("cashgo.build_progress_label", "0/0")
             self.cg_build_progress_current, self.cg_build_progress_max = extract_progress(
                 self.cg_build_progress_text
             )
             return self
-
-
-class objects:
-    """封装的一些判断函数，兼容旧脚本调用。"""
-
-    def if_exists(self, name):
-        return node_exists(name, timeout=3)
-
-    def if_click(self, name):
-        return if_click(name)
 
 
 class GameActions:
@@ -352,6 +319,18 @@ class GameActions:
 
     def click_node(self, node, timeout=2):
         return if_click(node, timeout=timeout)
+
+    def node(self, path):
+        """通过 group.key 点号路径获取节点对象。"""
+        return resolve_node(path)
+
+    def text(self, path, default=""):
+        """通过 group.key 点号路径读取节点文本。"""
+        return node_text(path, default)
+
+    def click(self, path, timeout=2):
+        """通过 group.key 点号路径点击节点。"""
+        return self.click_node(self.node(path), timeout=timeout)
 
     def wait_for_node(self, node, timeout=10, interval=0.5):
         end_time = time.time() + timeout
@@ -374,6 +353,14 @@ class GameActions:
     def click_lobby_theme(self, theme_id, source="poco_automation"):
         return click_lobby_theme(theme_id, poco_driver=self.poco, source=source)
 
+    def extract_number(self, text, default="0"):
+        """脚本常用数字提取入口，支持 K/M/B/T/Q 单位换算。"""
+        return extract_number(text, default=default)
+
+    def extract_progress(self, text):
+        """脚本常用进度文本提取入口。"""
+        return extract_progress(text)
+
     def swipe_center_to(self, target_node, duration=0.3):
         from airtest.utils.snake import Screen  # pyright: ignore[reportMissingImports]
         screen = Screen()
@@ -389,11 +376,11 @@ class GameActions:
         for _ in range(max_tries):
             clicked = False
             for feature in (
-                ("common", "btn_close"),
-                ("common", "close_btn"),
-                ("cashgo", "btn_close"),
+                "common.btn_close",
+                "common.close_btn",
+                "cashgo.btn_close",
             ):
-                if if_click(resolve_node(*feature), label=f"{feature[0]}.{feature[1]}"):
+                if if_click(resolve_node(feature), label=feature):
                     sleep(0.2)
                     clicked = True
                     closed = True

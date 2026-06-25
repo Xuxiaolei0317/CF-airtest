@@ -16,7 +16,7 @@ sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
 from airtest_booststrap import ST, poco
 
 import CF_nodes
-from CF_nodes import GameActions, node_text
+from CF_nodes import GameActions
 from CF_state_machine import create_state_machine
 from cf_behavior_tree import Action, BehaviorContext, Condition, Selector, Sequence
 from cf_flow_runner import FlowRunner, FlowStep
@@ -53,7 +53,7 @@ def state_is(*names):
 
 def cashgo_level(default=0):
     """读取 Cash Go 等级文案，并返回其中的数字等级。"""
-    text = node_text("cashgo", "rank_label", "")
+    text = GAME.text("cashgo.rank_label")
     match = re.search(r"#?\s*(\d+)", text or "")
     return int(match.group(1)) if match else default
 
@@ -67,7 +67,7 @@ def enter_cash_go():
     if state.name != "LOBBY_HOME":
         SM.dump_unknown("cashgo_flow_not_at_lobby", state=state)
         return False
-    return FLOW.click_feature(("lobby", "cash_go"), expected_states=CASH_GO_STATES, timeout=10)()
+    return FLOW.click_feature("lobby.cash_go", expected_states=CASH_GO_STATES, timeout=10)()
 
 
 def handle_popup(context):
