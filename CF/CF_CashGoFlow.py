@@ -25,20 +25,24 @@ from cf_flow_runner import FlowRunner, FlowStep
 ST.SAVE_IMAGE = True
 CF_nodes.poco = poco
 
+# 整个流程共用同一组辅助对象，确保状态识别、点击动作和行为树轮询都在同一个 Poco 会话中执行。
 GAME = GameActions(poco)
 SM = create_state_machine(poco)
 FLOW = FlowRunner(SM)
 
+# 这些状态表示 Cash Go 玩法已经打开。
 CASH_GO_STATES = {"CASH_GO_BUILD", "CASH_GO_COMPLETE", "CASH_GO_OOC"}
 
 
 def current_state(context, verbose=True):
+    """识别并缓存当前行为树 tick 的最新界面状态。"""
     state = context.state_machine.detect_state(verbose=verbose)
     context.data["state"] = state
     return state
 
 
 def state_is(*names):
+    """创建一个行为树条件，用于匹配任意期望状态。"""
     expected = set(names)
 
     def predicate(context):
@@ -48,12 +52,14 @@ def state_is(*names):
 
 
 def cashgo_level(default=0):
+    """读取 Cash Go 等级文案，并返回其中的数字等级。"""
     text = node_text("cashgo", "rank_label", "")
     match = re.search(r"#?\s*(\d+)", text or "")
     return int(match.group(1)) if match else default
 
 
 def enter_cash_go():
+    """必要时先恢复到大厅，再进入 Cash Go 玩法。"""
     SM.recover_blockers()
     state = SM.detect_state(verbose=True)
     if state.name in CASH_GO_STATES:
@@ -65,11 +71,12 @@ def enter_cash_go():
 
 
 def handle_popup(context):
+    """清理会打断 Cash Go 循环的阻塞弹窗。"""
     return context.state_machine.recover_blockers(max_tries=3)
 
 
 def handle_ooc(context):
-    """Buy coins from the OOC/shop path and return to build."""
+    """通过 OOC/商店路径购买金币，并返回建造界面。"""
     sm = context.state_machine
     sm.click_feature(("cashgo", "btn_close"), label="cashgo.ooc.close")
     sleep(0.5)
@@ -90,6 +97,7 @@ def handle_ooc(context):
 
 
 def handle_complete(context):
+    """领取已完成奖励，并在达到目标等级后结束循环。"""
     target_level = int(context.data.get("target_level", 0))
     level = cashgo_level()
     print(f"[CashGo] current level: {level}, target: {target_level}")
@@ -101,6 +109,7 @@ def handle_complete(context):
 
 
 def tap_build(context):
+    """在普通建造状态下点击一次建造按钮。"""
     if not context.state_machine.click_feature(("cashgo", "build_btn"), label="cashgo.build"):
         return False
     sleep(0.5)
@@ -108,12 +117,14 @@ def tap_build(context):
 
 
 def dump_unknown(context):
+    """当没有行为树分支能处理当前界面时，保存诊断信息。"""
     state = context.state_machine.detect_state(verbose=True)
     context.state_machine.dump_unknown("cashgo_behavior_tree_unknown", state=state)
     return False
 
 
 def create_cashgo_tree():
+    """构建 Cash Go 行为树，按特殊状态到默认建造的顺序处理。"""
     return Selector(
         "cashgo_build_tree",
         [
@@ -151,6 +162,7 @@ def create_cashgo_tree():
 
 
 def build_until(target_level=180, max_ticks=300):
+    """进入 Cash Go，并持续轮询行为树直到完成或超时。"""
     context = BehaviorContext(SM, data={"target_level": target_level})
     tree = create_cashgo_tree()
     return FLOW.run(

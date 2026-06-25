@@ -102,7 +102,7 @@ def main():
     parser.add_argument("--module", type=str, default="MT_main",
                         help="测试模块名称 (默认: MT_main)")
     parser.add_argument("--serial", type=str, default=None,
-                        help="设备序列号 (覆盖配置文件中的默认值)")
+                        help="设备序列号 (覆盖自动检测结果)")
     parser.add_argument("--list", action="store_true",
                         help="列出所有可用测试模块")
     
@@ -126,4 +126,12 @@ def main():
 
 
 if __name__ == "__main__":
+    print("""Airtest 自动化测试统一入口。用法:
+    python run_tests.py                          # 运行 MT 维护流程测试
+    python run_tests.py --game cf                # 运行 CF 系列测试
+    python run_tests.py --game mt                # 运行 MT 系列测试
+    python run_tests.py --game cf --module CashGo  # 运行 CF CashGo 模块
+    python run_tests.py --serial YOUR_DEVICE_ID   # 指定设备序列号
+    python run_tests.py --list                   # 列出所有可用测试
+""")
     main()
