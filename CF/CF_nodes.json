@@ -98,6 +98,9 @@
     "theme_add_btn": {"root":"footer","desc":"主题bet加号按钮","chain":[["child","totalbet_node"],["child","add_btn"]]},
     "theme_bet_label": {"root":"footer","desc":"主题bet文本","chain":[["child","totalbet_node"],["child","totalbet_label"]]},
     "theme_label_win": {"root":"totalwin_node","desc":"主题总赢分文本","chain":[["child","win_node"],["child","label_win"]]},
+    "theme_loading_progress": {"root": "progress_node", "desc": "主题下载/loading进度节点"},
+    "theme_loading_progress_label": {"root": "progress_label", "desc": "主题下载/loading百分比文本"},
+    "theme_loading_icon_progress": {"root": "activity_theme_icon_progress", "desc": "主题下载/loading图标进度节点"},
     "theme_node_start": {"root":"map_free", "chain": [["child","root"],["child", "node_start"]], "desc": "122map"},
     "theme_enter_btn": {"root":"header","chain":[["child","lobby_node"],["child","enter_btn"]],"desc":"主题返回大厅按钮"}
   },

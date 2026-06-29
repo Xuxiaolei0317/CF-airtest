@@ -119,10 +119,10 @@ class CFStateMachine:
         """处理通用弹窗/遮罩，返回是否处理过阻塞。"""
         recovered = False
         blocker_actions = (
+            "common.btn_close",
             "cashgo.collect_btn",
             "common.btn_collect",
             "cashgo.btn_close",
-            "common.btn_close",
             "common.close_btn",
             "common.mask_close",
             "common.btn_confirm",

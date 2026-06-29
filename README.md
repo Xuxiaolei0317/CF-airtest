@@ -109,14 +109,14 @@ bet_num = game_actions.extract_number(bet_text)
 
 ## CF 主题遍历脚本
 
-`CF/CF_theme_traversal.py` 用于遍历大厅主题列表。脚本会按主题 ID 顺序执行：调用 Lua 打开主题选 bet 界面、点击低级房进入按钮、等待主题页关键节点、停留 15 秒、点击主题返回大厅按钮并继续下一个主题。正常流程只等待必要节点，不再反复跑状态机；只有超时失败时才导出现场。
+`CF/CF_theme_traversal.py` 用于遍历大厅主题列表。脚本会按主题 ID 顺序执行：先确认当前在大厅，再调用 Lua 打开主题选 bet 界面、点击高级房进入按钮、等待主题下载/loading 结束并确认主题 Home 关键节点稳定出现、清理主题内通用弹窗、停留 15 秒、再次清理弹窗后点击主题返回大厅按钮并继续下一个主题。正常流程只等待必要节点，不再反复跑状态机；只有超时失败时才导出现场。
 
 - 默认主题列表维护在脚本内 `THEME_IDS`。
 - 直接运行脚本时可以用 `--theme-ids 122,123`、`--theme-file theme_ids.txt` 或环境变量 `CF_THEME_IDS=122,123` 临时覆盖。
-- 如果 Lua 后没有低级房入口，脚本会判断为主题未配置，记录该主题 ID 后直接继续下一个主题。
-- 如果主题 loading 超时未进入主题页，脚本会记录该主题 ID，重启游戏后继续验证下一个主题。
+- 如果 Lua 后没有高级房入口，脚本会打印该主题并直接继续下一个主题。
+- 如果主题 loading 超时未进入主题页，脚本会记录该主题 ID，重启游戏后继续验证下一个主题；默认超时 90 秒，可用 `CF_THEME_LOAD_TIMEOUT` 覆盖。
+- 每次触发进入主题前都会确认当前在大厅；如果不在大厅，会先清理通用弹窗，仍未恢复则重启游戏后继续。
 - loading 失败记录输出到 `log/theme_traversal/failed_loading_theme_ids_*.txt`。
-- 未配置主题记录输出到 `log/theme_traversal/unconfigured_theme_ids_*.txt`。
 - 重启游戏优先使用 `CF_APP_PACKAGE`；未设置时会尝试读取当前前台应用包名，兜底值为 `com.spinX.casino.cashfrenzy`。重启后如果停在 debug 启动页，脚本默认点击相对坐标 `CF_LAUNCH_CONFIRM_TAP=0.500,0.400` 进入游戏；坐标不准时可通过环境变量覆盖。
 
 ## 功能模块的自动化脚本命名规则
