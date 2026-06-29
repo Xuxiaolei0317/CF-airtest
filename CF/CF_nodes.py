@@ -51,13 +51,19 @@ class ImageSpec:
     filename: str
     record_pos: tuple = None
     resolution: tuple = None
+    threshold: float = None
     desc: str = ""
 
     def resolve(self):
         path = Path(self.filename)
         if not path.is_absolute():
             path = CF_DIR / path
-        return Template(str(path), record_pos=self.record_pos, resolution=self.resolution)
+        return Template(
+            str(path),
+            record_pos=self.record_pos,
+            resolution=self.resolution,
+            threshold=self.threshold,
+        )
 
 
 def _load_node_config():
@@ -82,6 +88,7 @@ def _spec_from_config(config):
             config["filename"],
             record_pos=_tuple_or_none(config.get("record_pos")),
             resolution=_tuple_or_none(config.get("resolution")),
+            threshold=config.get("threshold"),
             desc=config.get("desc", ""),
         )
     return NodeSpec(

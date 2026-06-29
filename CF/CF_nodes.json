@@ -1,6 +1,6 @@
 {
   "common": {
-    "Confirm_btn": {"type": "image", "filename": "Confirm.png", "record_pos": [-0.144, -0.219], "resolution": [1080, 2340], "attr": "btn", "desc": "启动页确认按钮"},
+    "Confirm_btn": {"type": "image", "filename": "Confirm.png", "record_pos": [-0.144, -0.219], "resolution": [1080, 2340], "threshold": 0.9, "attr": "btn", "desc": "启动页确认按钮"},
     "btn_close": {"root": "btn_close", "desc": "通用关闭按钮1"},
     "close_btn": {"root": "close_btn", "desc": "通用关闭按钮2"},
     "btn_confirm": {"root": "btn_confirm", "desc": "通用确认按钮"},
@@ -10,6 +10,7 @@
 
   },
   "lobby": {
+    "root": {"root": "LobbyScene", "desc": "大厅根节点"},
     "mission_pass": {"root": "mission_pass_node", "attr": "lobby_mp_icon", "desc": "Mission Pass 入口"},
     "mission": {"root": "dashboard_node", "attr": "lobby_mission_icon", "desc": "每日任务入口"},
     "a_set": {"root": "a_set_node", "attr": "lobby_Aset_icon", "desc": "A级活动入口"},
@@ -98,6 +99,7 @@
     "theme_add_btn": {"root":"footer","desc":"主题bet加号按钮","chain":[["child","totalbet_node"],["child","add_btn"]]},
     "theme_bet_label": {"root":"footer","desc":"主题bet文本","chain":[["child","totalbet_node"],["child","totalbet_label"]]},
     "theme_label_win": {"root":"totalwin_node","desc":"主题总赢分文本","chain":[["child","win_node"],["child","label_win"]]},
+    "theme_loading2": {"root": "loading2", "desc": "主题 loading 界面根节点，进入主题后会隐藏"},
     "theme_loading_progress": {"root": "progress_node", "desc": "主题下载/loading进度节点"},
     "theme_loading_progress_label": {"root": "progress_label", "desc": "主题下载/loading百分比文本"},
     "theme_loading_icon_progress": {"root": "activity_theme_icon_progress", "desc": "主题下载/loading图标进度节点"},

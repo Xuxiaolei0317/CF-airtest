@@ -21,6 +21,7 @@ cf-airtest/
 │   ├── CF_test.py               # CF 主测试
 │   ├── CF_test_theme.py         # CF 主题相关测试
 │   ├── CF_theme_traversal.py    # CF 主题列表遍历/Loading 异常记录脚本
+│   ├── CF_theme_traversal_tree.py # CF 主题遍历专用行为树
 │   ├── CF_CashGo.py             # CF CashGo 模块
 │   ├── CF_quest.py              # CF 任务模块
 │   ├── CF_CashGoFlow.py         # CF CashGo 流程编排
@@ -109,15 +110,18 @@ bet_num = game_actions.extract_number(bet_text)
 
 ## CF 主题遍历脚本
 
-`CF/CF_theme_traversal.py` 用于遍历大厅主题列表。脚本会按主题 ID 顺序执行：先确认当前在大厅，再调用 Lua 打开主题选 bet 界面、点击高级房进入按钮、等待主题下载/loading 结束并确认主题 Home 关键节点稳定出现、清理主题内通用弹窗、停留 15 秒、再次清理弹窗后点击主题返回大厅按钮并继续下一个主题。正常流程只等待必要节点，不再反复跑状态机；只有超时失败时才导出现场。
+`CF/CF_theme_traversal.py` 用于遍历大厅主题列表。脚本会按主题 ID 顺序执行：先确认当前在大厅，再通过 `CF/CF_theme_traversal_tree.py` 的主题遍历行为树调用 Lua 打开主题选 bet 界面、点击高级房进入按钮，并验证是否进入主题；如果进入动作后能处理到主题内弹窗，也会直接判定为进入成功。进入主题后默认不额外停留，会快速清理遮挡弹窗、点击返回大厅按钮并验证是否真正回到 `LOBBY_HOME`，然后继续下一个主题。失败留证时再导出现场，便于定位卡在 loading 进不去的主题。
 
 - 默认主题列表维护在脚本内 `THEME_IDS`。
 - 直接运行脚本时可以用 `--theme-ids 122,123`、`--theme-file theme_ids.txt` 或环境变量 `CF_THEME_IDS=122,123` 临时覆盖。
 - 如果 Lua 后没有高级房入口，脚本会打印该主题并直接继续下一个主题。
-- 如果主题 loading 超时未进入主题页，脚本会记录该主题 ID，重启游戏后继续验证下一个主题；默认超时 90 秒，可用 `CF_THEME_LOAD_TIMEOUT` 覆盖。
-- 每次触发进入主题前都会确认当前在大厅；如果不在大厅，会先清理通用弹窗，仍未恢复则重启游戏后继续。
-- loading 失败记录输出到 `log/theme_traversal/failed_loading_theme_ids_*.txt`。
-- 重启游戏优先使用 `CF_APP_PACKAGE`；未设置时会尝试读取当前前台应用包名，兜底值为 `com.spinX.casino.cashfrenzy`。重启后如果停在 debug 启动页，脚本默认点击相对坐标 `CF_LAUNCH_CONFIRM_TAP=0.500,0.400` 进入游戏；坐标不准时可通过环境变量覆盖。
+- 如果主题进入超时，脚本会记录该主题 ID，重启游戏后继续验证下一个主题；默认超时 10 秒，可用 `CF_THEME_LOAD_TIMEOUT` 覆盖。
+- 运行日志会输出 `[PERF]` 耗时点，包括设备检测/Poco 初始化、准备大厅、开始执行进入主题、Lua 打开选房、高级房点击、进入主题结果和返回大厅耗时，便于定位界面卡帧或初始化耗时。
+- 每次触发进入主题前都会确认当前在大厅；大厅优先通过根节点 `LobbyScene`，并辅以设置/中部入口节点判断。如果不在大厅，会先清理通用弹窗，仍未恢复则重启游戏后继续。
+- `loading2` 只用于进入动作后的异常识别：如果主题 Home 未出现、主题内弹窗也处理不到，并且 `loading2` 一直可见到超时，就记录为进入失败主题。
+- 如需进入主题后停留并检查 Lua/Char Error，可通过 `--stay-seconds` 指定停留秒数；检测到时会保存截图并打印最近的 logcat 关键日志。
+- 进入失败记录输出到 `log/theme_traversal/failed_theme_ids_*.txt`。
+- 重启游戏优先使用 `CF_APP_PACKAGE`；未设置时会尝试读取当前前台应用包名，兜底值为 `slots.pcg.casino.games.free.android`。重启后如果停在 debug 启动页，脚本默认按横屏坐标使用 `CF_LAUNCH_CONFIRM_TAP=0.500,0.940` 点击居中靠下的 Confirm，避免启动页图片误识别；坐标不准时可通过环境变量覆盖。
 
 ## 功能模块的自动化脚本命名规则
 

@@ -60,6 +60,7 @@
     "priority": 50,
     "min_hits": 2,
     "features": [
+      "lobby.root",
       "lobby.cash_go",
       "lobby.setting",
       "lobby.middle",

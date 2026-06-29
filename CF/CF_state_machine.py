@@ -120,12 +120,9 @@ class CFStateMachine:
         recovered = False
         blocker_actions = (
             "common.btn_close",
-            "cashgo.collect_btn",
-            "common.btn_collect",
-            "cashgo.btn_close",
             "common.close_btn",
             "common.mask_close",
-            "common.btn_confirm",
+            "common.btn_collect",
         )
 
         for _ in range(max_tries):
