@@ -1,11 +1,13 @@
 {
   "common": {
+    "Confirm_btn": {"type": "image", "filename": "Confirm.png", "record_pos": [-0.144, -0.219], "resolution": [1080, 2340], "attr": "btn", "desc": "启动页确认按钮"},
     "btn_close": {"root": "btn_close", "desc": "通用关闭按钮1"},
     "close_btn": {"root": "close_btn", "desc": "通用关闭按钮2"},
     "btn_confirm": {"root": "btn_confirm", "desc": "通用确认按钮"},
     "btn_cancel": {"root": "btn_cancel", "desc": "通用取消按钮"},
     "mask_close": {"root": "mask", "chain": [["child", "btn_close"]], "desc": "通用遮罩关闭按钮"},
     "btn_collect": {"root": "btnCollect", "aliases": ["btnCollect"], "desc": "通用领取按钮"}
+
   },
   "lobby": {
     "mission_pass": {"root": "mission_pass_node", "attr": "lobby_mp_icon", "desc": "Mission Pass 入口"},
@@ -90,11 +92,14 @@
     "theme_btn_right": {"root": "loading_b", "desc": "主题选bet界面，右切换按钮", "chain": [["child", "loading_b"], ["child", "btn_right"]]},
     "theme_btn_left": {"root": "loading_b", "desc": "主题选bet界面，左切换按钮", "chain": [["child", "loading_b"], ["child", "btn_left"]]},
     "theme_touch_node": {"root": "loading_b", "desc": "主题选bet界面，喜欢按钮", "chain": [["child", "root"], ["child", "touchNode"]]},
+    "theme_regular_enter_btn": {"root":"theme_node","chain":[["child","play_btn_regular"],["child","btn_label"]],"desc":"主题选bet界面，低级房进入按钮"},
+    "theme_high_enter_btn": {"root":"theme_node","chain":[["child","play_btn_high"],["child","btn_label"]],"desc":"主题选bet界面，高级房进入按钮"},
     "theme_sub_btn": {"root":"footer","desc":"主题bet减号按钮","chain":[["child","totalbet_node"],["child","sub_btn"]]},
     "theme_add_btn": {"root":"footer","desc":"主题bet加号按钮","chain":[["child","totalbet_node"],["child","add_btn"]]},
     "theme_bet_label": {"root":"footer","desc":"主题bet文本","chain":[["child","totalbet_node"],["child","totalbet_label"]]},
     "theme_label_win": {"root":"totalwin_node","desc":"主题总赢分文本","chain":[["child","win_node"],["child","label_win"]]},
-    "theme_node_start": {"root":"map_free", "chain": [["child","root"],["child", "node_start"]], "desc": "122map"}
+    "theme_node_start": {"root":"map_free", "chain": [["child","root"],["child", "node_start"]], "desc": "122map"},
+    "theme_enter_btn": {"root":"header","chain":[["child","lobby_node"],["child","enter_btn"]],"desc":"主题返回大厅按钮"}
   },
   "JP_like": {
     "JP_like_label_player": {"root":"jackpotnotification","chain":[["child","root"],["child","label_player"]],"desc":"JP_like 玩家name文本"},

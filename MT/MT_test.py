@@ -12,6 +12,7 @@ from airtest_booststrap import poco
 
 # 导入节点和通用方法
 from MT_main import GameActions
+from MT_nodes import common_nodes as mt
 
 # 打开截图功能
 ST.SAVE_IMAGE = True
@@ -21,8 +22,6 @@ GA = GameActions(poco)
 
 if __name__ == "__main__":
     print("MT 测试开始")
-    GA.click("main.footer_guild_friend")
-    GA.click("main.footer_stamp")
-    GA.click("main.footer_spin")
+    # GA.run_lua('SettingCtl:popupEditProfileRenameHotpopDialog()')
     
     print("MT 测试结束")

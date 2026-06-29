@@ -20,7 +20,7 @@
     "features": [
       "theme.theme_sub_btn",
       "theme.theme_add_btn",
-      "theme.theme_totalbet_label",
+      "theme.theme_bet_label",
       "theme.theme_label_win"
     ]
   },

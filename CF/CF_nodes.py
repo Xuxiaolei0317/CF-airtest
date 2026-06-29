@@ -238,7 +238,7 @@ def run_lua(lua_content, poco_driver=None):
 
 def click_lobby_theme(theme_id, poco_driver=None, source="poco_automation"):
     """通过 RunLua 点击指定大厅主题。"""
-    lua_content = f'LobbyThemeControl:getInstance():clickLobbyTheme({theme_id}, nil, "{source}")'
+    lua_content = f'if ThemePubControl:getInstance():_getThemeInitConfig({theme_id}) then LobbyThemeControl:getInstance():clickLobbyTheme({theme_id}, nil, "poco_automation") end'
     return run_lua(lua_content, poco_driver=poco_driver)
 
 

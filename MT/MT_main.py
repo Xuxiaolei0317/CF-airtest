@@ -423,6 +423,16 @@ class GameActions:
     def click_node(self, node, timeout=2):
         return if_click(node, timeout=timeout)
 
+    def run_lua(self, lua_content):
+        """执行传入的 Lua 内容。"""
+        try:
+            result = self.poco.agent.rpc.call("RunLua", lua_content)
+            print(f"执行 Lua 成功：{lua_content}")
+            return result
+        except Exception as e:
+            print(f"执行 Lua 失败：{lua_content} | {e}")
+            return None
+            
     def node(self, path):
         """通过 group.key 点号路径获取节点对象。"""
         return MT_nodes.resolve_node(path)

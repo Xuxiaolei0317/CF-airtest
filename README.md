@@ -20,6 +20,7 @@ cf-airtest/
 │   ├── CF_nodes.py              # CF 节点定义
 │   ├── CF_test.py               # CF 主测试
 │   ├── CF_test_theme.py         # CF 主题相关测试
+│   ├── CF_theme_traversal.py    # CF 主题列表遍历/Loading 异常记录脚本
 │   ├── CF_CashGo.py             # CF CashGo 模块
 │   ├── CF_quest.py              # CF 任务模块
 │   ├── CF_CashGoFlow.py         # CF CashGo 流程编排
@@ -68,8 +69,17 @@ python run_tests.py --game mt
 # 运行 CF CashGo 模块，模块名可写 CashGo 或 CF_CashGo
 python run_tests.py --game cf --module CashGo
 
+# 运行 CF 主题遍历脚本；主题列表可在脚本 THEME_IDS 中维护
+python run_tests.py --game cf --module theme_traversal
+
 # 指定设备序列号
 python run_tests.py --serial YOUR_DEVICE_ID
+
+# 直接运行业务脚本时也支持指定设备
+python MT/MT_test.py --serial YOUR_DEVICE_ID
+
+# 直接运行 CF 主题遍历脚本时，可临时覆盖主题列表和停留时长
+python CF/CF_theme_traversal.py --theme-ids 122,123,124 --stay-seconds 15
 ```
 
 ## 节点与脚本分层
@@ -84,7 +94,7 @@ MT 项目约定：
 
 CF / MT 节点引用统一约定：
 
-- 节点配置 API 只使用 `group.key` 点号路径，例如 `theme.theme_totalbet_label`、`main.footer_spin`。
+- 节点配置 API 只使用 `group.key` 点号路径，例如 `theme.theme_bet_label`、`main.footer_spin`。
 - `CF_nodes.py` / `MT_nodes.py` 的 `node_spec()`、`resolve_node()`、`node_text()` 都只接收点号路径，不再使用 `group, key` 两个参数。
 - 状态机 JSON 的 `features` 也只写点号路径字符串，不再写 `["group", "key"]` 数组。
 - `common_nodes` 只作为节点类入口，复杂流程脚本优先使用 `GameActions` 的点号路径方法。
@@ -92,10 +102,22 @@ CF / MT 节点引用统一约定：
 CF / MT 测试脚本优先使用 `GameActions` 的点号路径快捷入口：
 
 ```python
-game_actions.click("theme.theme_totalbet_label")
-bet_text = game_actions.text("theme.theme_totalbet_label")
+game_actions.click("theme.theme_bet_label")
+bet_text = game_actions.text("theme.theme_bet_label")
 bet_num = game_actions.extract_number(bet_text)
 ```
+
+## CF 主题遍历脚本
+
+`CF/CF_theme_traversal.py` 用于遍历大厅主题列表。脚本会按主题 ID 顺序执行：调用 Lua 打开主题选 bet 界面、点击低级房进入按钮、等待主题页关键节点、停留 15 秒、点击主题返回大厅按钮并继续下一个主题。正常流程只等待必要节点，不再反复跑状态机；只有超时失败时才导出现场。
+
+- 默认主题列表维护在脚本内 `THEME_IDS`。
+- 直接运行脚本时可以用 `--theme-ids 122,123`、`--theme-file theme_ids.txt` 或环境变量 `CF_THEME_IDS=122,123` 临时覆盖。
+- 如果 Lua 后没有低级房入口，脚本会判断为主题未配置，记录该主题 ID 后直接继续下一个主题。
+- 如果主题 loading 超时未进入主题页，脚本会记录该主题 ID，重启游戏后继续验证下一个主题。
+- loading 失败记录输出到 `log/theme_traversal/failed_loading_theme_ids_*.txt`。
+- 未配置主题记录输出到 `log/theme_traversal/unconfigured_theme_ids_*.txt`。
+- 重启游戏优先使用 `CF_APP_PACKAGE`；未设置时会尝试读取当前前台应用包名，兜底值为 `com.spinX.casino.cashfrenzy`。重启后如果停在 debug 启动页，脚本默认点击相对坐标 `CF_LAUNCH_CONFIRM_TAP=0.500,0.400` 进入游戏；坐标不准时可通过环境变量覆盖。
 
 ## 功能模块的自动化脚本命名规则
 
