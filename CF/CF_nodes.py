@@ -378,7 +378,6 @@ class GameActions:
             for feature in (
                 "common.btn_close",
                 "common.close_btn",
-                "cashgo.btn_close",
             ):
                 if if_click(resolve_node(feature), label=feature):
                     sleep(0.2)
