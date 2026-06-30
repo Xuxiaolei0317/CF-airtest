@@ -20,7 +20,7 @@ from pocounit.case import PocoTestCase
 
 # 导入公共初始化模块
 sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
-from airtest_booststrap import ST, dev, poco
+from airtest_booststrap import ST, dev, get_android_poco, init_poco, poco
 
 BOOTSTRAP_READY_AT = time.perf_counter()
 
@@ -41,428 +41,46 @@ RESULT_DIR = PROJECT_ROOT / "log" / "theme_traversal"
 DEFAULT_CF_APP_PACKAGE = "slots.pcg.casino.games.free.android"
 
 # 默认遍历列表：需要验证更多主题时直接补充这里，或运行时用 --theme-ids 覆盖。
-THEME_IDS = [122,264,340,255]
-# THEME_IDS = [
-#       122,
-#       340,
-#       276,
-#       255,
-#       326,
-#       331,
-#       10468,
-#       366,
-#       101,
-#       244,
-#       386,
-#       107,
-#       321,
-#       141,
-#       181,
-#       388,
-#       125,
-#       295,
-#       208,
-#       213,
-#       363,
-#       396,
-#       406,
-#       114,
-#       346,
-#       176,
-#       217,
-#       413,
-#       204,
-#       361,
-#       416,
-#       372,
-#       257,
-#       399,
-#       180,
-#       108,
-#       203,
-#       241,
-#       341,
-#       411,
-#       202,
-#       118,
-#       370,
-#       124,
-#       157,
-#       209,
-#       427,
-#       350,
-#       308,
-#       239,
-#       177,
-#       111,
-#       248,
-#       391,
-#       192,
-#       289,
-#       436,
-#       263,
-#       421,
-#       357,
-#       253,
-#       200,
-#       163,
-#       410,
-#       102,
-#       126,
-#       375,
-#       332,
-#       232,
-#       381,
-#       227,
-#       166,
-#       424,
-#       353,
-#       405,
-#       274,
-#       270,
-#       425,
-#       356,
-#       105,
-#       251,
-#       407,
-#       351,
-#       292,
-#       402,
-#       299,
-#       404,
-#       103,
-#       338,
-#       376,
-#       250,
-#       398,
-#       115,
-#       165,
-#       394,
-#       378,
-#       344,
-#       212,
-#       127,
-#       10469,
-#       392,
-#       272,
-#       303,
-#       128,
-#       195,
-#       10452,
-#       368,
-#       374,
-#       106,
-#       199,
-#       349,
-#       313,
-#       367,
-#       117,
-#       249,
-#       297,
-#       190,
-#       401,
-#       329,
-#       260,
-#       173,
-#       109,
-#       140,
-#       278,
-#       319,
-#       354,
-#       383,
-#       233,
-#       256,
-#       327,
-#       412,
-#       271,
-#       390,
-#       380,
-#       335,
-#       328,
-#       113,
-#       193,
-#       385,
-#       224,
-#       426,
-#       262,
-#       431,
-#       284,
-#       110,
-#       382,
-#       218,
-#       362,
-#       311,
-#       148,
-#       358,
-#       283,
-#       147,
-#       291,
-#       418,
-#       281,
-#       296,
-#       345,
-#       379,
-#       129,
-#       130,
-#       132,
-#       240,
-#       143,
-#       415,
-#       287,
-#       207,
-#       339,
-#       377,
-#       397,
-#       228,
-#       191,
-#       196,
-#       286,
-#       342,
-#       314,
-#       121,
-#       235,
-#       268,
-#       408,
-#       384,
-#       245,
-#       307,
-#       229,
-#       236,
-#       317,
-#       119,
-#       188,
-#       277,
-#       429,
-#       123,
-#       168,
-#       323,
-#       309,
-#       373,
-#       210,
-#       280,
-#       409,
-#       365,
-#       324,
-#       112,
-#       187,
-#       273,
-#       318,
-#       136,
-#       167,
-#       258,
-#       310,
-#       422,
-#       206,
-#       423,
-#       220,
-#       265,
-#       316,
-#       371,
-#       144,
-#       252,
-#       10470,
-#       438,
-#       10477,
-#       264,
-#       138,
-#       175,
-#       355,
-#       158,
-#       387,
-#       389,
-#       352,
-#       275,
-#       238,
-#       325,
-#       420,
-#       116,
-#       134,
-#       211,
-#       194,
-#       395,
-#       160,
-#       444,
-#       432,
-#       440,
-#       149,
-#       347,
-#       315,
-#       221,
-#       172,
-#       242,
-#       234,
-#       359,
-#       267,
-#       219,
-#       330,
-#       182,
-#       247,
-#       185,
-#       214,
-#       145,
-#       294,
-#       333,
-#       300,
-#       360,
-#       322,
-#       298,
-#       150,
-#       137,
-#       259,
-#       414,
-#       439,
-#       442,
-#       197,
-#       146,
-#       164,
-#       169,
-#       320,
-#       139,
-#       152,
-#       189,
-#       243,
-#       285,
-#       334,
-#       449,
-#       443,
-#       417,
-#       198,
-#       279,
-#       174,
-#       170,
-#       10474,
-#       135,
-#       269,
-#       282,
-#       131,
-#       222,
-#       348,
-#       10471,
-#       428,
-#       154,
-#       171,
-#       179,
-#       337,
-#       261,
-#       400,
-#       403,
-#       369,
-#       302,
-#       290,
-#       230,
-#       305,
-#       162,
-#       433,
-#       446,
-#       343,
-#       205,
-#       186,
-#       266,
-#       225,
-#       10486,
-#       201,
-#       153,
-#       178,
-#       10489,
-#       435,
-#       306,
-#       223,
-#       336,
-#       441,
-#       231,
-#       215,
-#       183,
-#       393,
-#       216,
-#       434,
-#       246,
-#       161,
-#       237,
-#       304,
-#       10472,
-#       10475,
-#       293,
-#       254,
-#       184,
-#       226,
-#       301,
-#       419,
-#       288,
-#       364,
-#       133,
-#       159,
-#       312,
-#       142,
-#       10458,
-#       10503,
-#       10456,
-#       10462,
-#       10451,
-#       447,
-#       156,
-#       10465,
-#       450,
-#       430,
-#       10505,
-#       10476,
-#       10506,
-#       10513,
-#       448,
-#       10514,
-#       10479,
-#       10487,
-#       10491,
-#       10459,
-#       10480,
-#       10483,
-#       10485,
-#       437,
-#       10455,
-#       10488,
-#       10494,
-#       10496,
-#       10492,
-#       10493,
-#       10518,
-#       10516,
-#       10521,
-#       10520,
-#       10482,
-#       10461,
-#       10454,
-#       10481,
-#       10523,
-#       10547,
-#       10536,
-#       10528,
-#       10525,
-#       10527,
-#       10473,
-#       10517,
-#       10519,
-#       10497,
-#       10511,
-#       10537,
-#       10524,
-#       10546,
-#       10530,
-#       10532,
-#       10529,
-#       10467,
-#       10531,
-#       4200,
-#       120,
-#       151,
-#       155,
-#       4204,
-#       2001,
-#       2002,
-#       2003
-#     ]
-
-THEME_LOAD_TIMEOUT = int(os.environ.get("CF_THEME_LOAD_TIMEOUT", "10"))
+# THEME_IDS = [122,255,340,326]
+THEME_IDS = [
+  122, 340, 276, 255, 326, 331, 10468, 366, 101, 244, 386, 107, 321, 141, 181, 388, 125, 295, 208, 213,
+  363, 396, 406, 114, 346, 176, 217, 413, 204, 361, 416, 372, 257, 399, 180, 108, 203, 241, 341, 411,
+  202, 118, 370, 124, 157, 209, 427, 350, 308, 239, 177, 111, 248, 391, 192, 289, 436, 263, 421, 357,
+  253, 200, 163, 410, 102, 126, 375, 332, 232, 381, 227, 166, 424, 353, 405, 274, 270, 425, 356, 105,
+  251, 407, 351, 292, 402, 299, 404, 103, 338, 376, 250, 398, 115, 165, 394, 378, 344, 212, 127, 10469,
+  392, 272, 303, 128, 195, 10452, 368, 374, 106, 199, 349, 313, 367, 117, 249, 297, 190, 401, 329, 260,
+  173, 109, 140, 278, 319, 354, 383, 233, 256, 327, 412, 271, 390, 380, 335, 328, 113, 193, 385, 224,
+  426, 262, 431, 284, 110, 382, 218, 362, 311, 148, 358, 283, 147, 291, 418, 281, 296, 345, 379, 129,
+  130, 132, 240, 143, 415, 287, 207, 339, 377, 397, 228, 191, 196, 286, 342, 314, 121, 235, 268, 408,
+  384, 245, 307, 229, 236, 317, 119, 188, 277, 429, 123, 168, 323, 309, 373, 210, 280, 409, 365, 324,
+  112, 187, 273, 318, 136, 167, 258, 310, 422, 206, 423, 220, 265, 316, 371, 144, 252, 10470, 438, 10477,
+  264, 138, 175, 355, 158, 387, 389, 352, 275, 238, 325, 420, 116, 134, 211, 194, 395, 160, 444, 432,
+  440, 149, 347, 315, 221, 172, 242, 234, 359, 267, 219, 330, 182, 247, 185, 214, 145, 294, 333, 300,
+  360, 322, 298, 150, 137, 259, 414, 439, 442, 197, 146, 164, 169, 320, 139, 152, 189, 243, 285, 334,
+  449, 443, 417, 198, 279, 174, 170, 10474, 135, 269, 282, 131, 222, 348, 10471, 428, 154, 171, 179, 337,
+  261, 400, 403, 369, 302, 290, 230, 305, 162, 433, 446, 343, 205, 186, 266, 225, 10486, 201, 153, 178,
+  10489, 435, 306, 223, 336, 441, 231, 215, 183, 393, 216, 434, 246, 161, 237, 304, 10472, 10475, 293, 254,
+  184, 226, 301, 419, 288, 364, 133, 159, 312, 142, 10458, 10503, 10456, 10462, 10451, 447, 156, 10465, 450, 430,
+  10505, 10476, 10506, 10513, 448, 10514, 10479, 10487, 10491, 10459, 10480, 10483, 10485, 437, 10455, 10488, 10494, 10496, 10492, 10493,
+  10518, 10516, 10521, 10520, 10482, 10461, 10454, 10481, 10523, 10547, 10536, 10528, 10525, 10527, 10473, 10517, 10519, 10497, 10511, 10537,
+  10524, 10546, 10530, 10532, 10529, 10467, 10531, 4200, 120, 151, 155, 4204, 2001, 2002, 2003
+]
+# 复测Id list ↓
+# THEME_IDS = [ 375, 332, 232, 381, 227, 166, 424, 353, 405, 274, 270, 425, 356, 105, 251, 407, 351, 292, 402, 299, 404, 103, 338, 376, 250, 398, 115, 165, 394, 378, 344, 212, 127, 10469, 392, 272, 303, 128, 195, 10452, 368, 374, 106, 199, 349, 313, 367, 117, 249, 297, 190, 401, 329, 260, 173, 109, 140, 278, 319, 354, 383, 233, 256, 327, 412, 271, 390, 380, 335, 328, 113, 193, 385, 224, 426, 262, 431, 284, 110, 382, 218, 362, 311, 148, 358, 283, 147, 291, 418, 281, 296, 345, 379, 129, 130, 132, 240, 143, 415, 287, 207, 339, 377, 397, 228, 191, 196, 286, 342, 314, 121, 235, 268, 408, 384, 245, 307, 229, 236, 317, 119, 188, 277, 429, 123, 168, 323, 309, 373, 210, 280, 409, 365, 324, 112, 187, 273, 318, 136, 167, 258, 310, 422, 206, 423, 220, 265, 316, 371, 144, 252, 10470, 438, 10477, 264, 138, 175, 355, 158, 387, 389, 352, 275, 238, 325, 420, 116, 134, 211, 194, 395, 160, 444, 432, 440, 149, 347, 315, 221, 172, 242, 234, 359, 267, 219, 330, 182, 247, 185, 214, 145, 294, 333, 300, 360, 322, 298, 150, 137, 259, 414, 439, 442, 197, 146, 164, 169, 320, 139, 152, 189, 243, 285, 334, 449, 443, 417, 198, 279, 174, 170, 10474, 135, 269, 282, 131, 222, 348, 10471, 428]
+THEME_LOAD_TIMEOUT = int(os.environ.get("CF_THEME_LOAD_TIMEOUT", "25"))
 THEME_SELECT_TIMEOUT = 10
+THEME_SELECT_OPEN_TIMEOUT = int(os.environ.get("CF_THEME_SELECT_OPEN_TIMEOUT", str(THEME_SELECT_TIMEOUT)))
+SOCIAL_THEME_FLOW_TIMEOUT = int(os.environ.get("CF_SOCIAL_THEME_FLOW_TIMEOUT", "8"))
+SOCIAL_THEME_ROLE_CONFIRM_TIMEOUT = float(os.environ.get("CF_SOCIAL_THEME_ROLE_CONFIRM_TIMEOUT", "3"))
+SOCIAL_THEME_BEFORE_MACHINE_CLICK_DELAY = float(os.environ.get("CF_SOCIAL_THEME_BEFORE_MACHINE_CLICK_DELAY", "5"))
+SOCIAL_THEME_RETURN_TIMEOUT = int(os.environ.get("CF_SOCIAL_THEME_RETURN_TIMEOUT", "8"))
+try:
+    SOCIAL_THEME_MACHINE_INDEX = int(os.environ.get("CF_SOCIAL_THEME_MACHINE_INDEX", "0"))
+except ValueError:
+    SOCIAL_THEME_MACHINE_INDEX = 0
 LOBBY_RETURN_TIMEOUT = 10
+LOBBY_RETURN_RETRY_COUNT = int(os.environ.get("CF_LOBBY_RETURN_RETRY_COUNT", "1"))
+LOBBY_RETURN_RETRY_DELAY = float(os.environ.get("CF_LOBBY_RETURN_RETRY_DELAY", "2"))
 LOBBY_PREPARE_TIMEOUT = 8
 APP_RESTART_WAIT_SECONDS = 10
 LAUNCH_CONFIRM_TIMEOUT = 10
@@ -471,14 +89,20 @@ DEFAULT_STAY_SECONDS = 0
 THEME_HOME_STABLE_SECONDS = 1.5
 THEME_POPUP_CHECK_INTERVAL = 2
 THEME_POPUP_RECOVER_TRIES = 4
+SPIN_BEFORE_RETURN_COUNT = 2
+SPIN_BEFORE_RETURN_INTERVAL = 1.0
 LOBBY_HOME_PATHS = (
-    "lobby.root",
+    "lobby.LobbyScene",
+    "lobby.btn_swallow_bottom",
+    # 首次启动或弹窗恢复后，LobbyScene/侧边栏可能未被 Poco 暴露，补充大厅常驻入口做兜底。
     "lobby.setting",
     "lobby.middle",
+    "lobby.eao",
+    "lobby.btn_touch",
 )
 THEME_HOME_REQUIRED_PATHS = (
     "theme.theme_enter_btn",
-    "theme.theme_bet_label",
+    "theme.theme_spin",
     "theme.theme_label_win",
 )
 THEME_LOADING_PATHS = (
@@ -489,16 +113,35 @@ THEME_SELECT_BLOCKING_PATHS = (
     "theme.theme_high_enter_btn",
     "theme.theme_touch_node",
 )
+SOCIAL_ROLE_CONFIRM_PATHS = (
+    "theme.btn_node",
+)
+SOCIAL_MACHINE_INDEXES = tuple(range(8))
+SOCIAL_MACHINE_PATHS = tuple(f"theme.machine_{index}" for index in SOCIAL_MACHINE_INDEXES)
+SOCIAL_MACHINE_ALT_PATHS = tuple(f"theme.machine_alt_{index}" for index in SOCIAL_MACHINE_INDEXES)
+SOCIAL_MACHINE_SELECT_PATHS = (
+    "theme.enmoji_btn",
+    "theme.emoji_btn",
+    "theme.machine",
+    "theme.machine_alt",
+    *SOCIAL_MACHINE_PATHS,
+    *SOCIAL_MACHINE_ALT_PATHS,
+)
+SOCIAL_MACHINE_CLOSE_PATHS = (
+    "theme.social_close_btn",
+    "common.btn_close",
+)
 QUICK_POPUP_CLOSE_PATHS = (
     "common.btn_close",
     "common.close_btn",
     "common.mask_close",
     "common.btn_collect",
-    "cashgo.btn_close",
 )
+LUA_ERROR_KEYWORDS = ("[Lua Error]", "Lua Error", "Char Error", "RESOURCE_ERROR")
 
 game_actions = GameActions(poco)
 state_machine = create_state_machine(poco)
+current_theme_is_social = False
 
 
 def elapsed_seconds(start_at, end_at=None):
@@ -513,6 +156,21 @@ def perf_log(label, start_at=None):
     if start_at is not None:
         detail = f"cost={elapsed_seconds(start_at)} | {detail}"
     print(f"[PERF] {label} | {detail}")
+
+
+def reset_poco_connection(reason=""):
+    """应用冷启动后重建游戏 Poco 连接，避免旧 RPC 管道 Broken pipe。"""
+    global poco, game_actions, state_machine
+    try:
+        poco = init_poco(dev, auto_refresh=False)
+        CF_nodes.poco = poco
+        game_actions = GameActions(poco)
+        state_machine = create_state_machine(poco)
+        print(f"已重建 Poco 连接：{reason or 'manual'}")
+        return True
+    except Exception as e:
+        print(f"重建 Poco 连接失败：{reason or 'manual'} | {e}")
+        return False
 
 
 def adb_command(args, timeout=10):
@@ -535,10 +193,17 @@ def print_latest_lua_error_log():
     """从 logcat 中打印最近一次 Lua/Char Error 的关键上下文。"""
     logcat = adb_command(["logcat", "-d", "-v", "time"], timeout=10)
     lines = logcat.splitlines()
+    ignore_keywords = ("poco-uiautomation-framework", '"attr.*="')
     error_indices = [
         index
         for index, line in enumerate(lines)
-        if "Char Error:" in line or "[Lua Error]" in line or "Lua Error" in line
+        if not any(keyword in line for keyword in ignore_keywords)
+        and (
+            "RESOURCE_ERROR" in line
+            or "Char Error:" in line
+            or "[Lua Error]" in line
+            or "Lua Error" in line
+        )
     ]
     if not error_indices:
         print("logcat 未找到 Lua Error / Char Error 相关日志")
@@ -548,6 +213,7 @@ def print_latest_lua_error_log():
     block = []
     for line in lines[start:start + 16]:
         if any(keyword in line for keyword in (
+            "RESOURCE_ERROR",
             "Char Error",
             "Lua Error",
             "MainGameScene",
@@ -568,21 +234,68 @@ def print_latest_lua_error_log():
     return True
 
 
-def check_lua_error_popup():
-    """检测游戏内 Lua/Char Error 弹窗，存在则截图并打印最近的 logcat 现场。"""
-    try:
-        hierarchy = poco.agent.hierarchy.dump()
-        hierarchy_text = json.dumps(hierarchy, ensure_ascii=False, default=str)
-    except Exception as e:
-        print(f"Lua Error 弹窗检查失败：{e}")
-        return False
+def hierarchy_has_lua_error(hierarchy):
+    """把控件树统一转成文本后查 Lua/Char Error 关键字。"""
+    hierarchy_text = json.dumps(hierarchy, ensure_ascii=False, default=str)
+    return any(keyword in hierarchy_text for keyword in LUA_ERROR_KEYWORDS)
 
-    if "[Lua Error]" not in hierarchy_text and "Lua Error" not in hierarchy_text and "Char Error" not in hierarchy_text:
+
+def android_lua_error_message_text(android_poco):
+    """读取 Android 原生弹窗 message 节点文本，用于记录完整 Lua Error 现场。"""
+    try:
+        message_node = android_poco("android:id/message")
+        if message_node.exists():
+            return message_node.get_text()
+    except Exception as e:
+        print(f"读取 Android Lua Error message 节点失败：{e}")
+    return ""
+
+
+def write_lua_error_message_log(message_text):
+    """把 Android 原生 Lua Error 的 message 原文落盘，方便批量遍历后回查。"""
+    RESULT_DIR.mkdir(parents=True, exist_ok=True)
+    log_path = RESULT_DIR / f"lua_error_message_{datetime.now().strftime('%Y%m%d_%H%M%S')}.txt"
+    log_path.write_text(message_text, encoding="utf-8")
+    print(f"Android Lua Error message 记录：{log_path}")
+    return log_path
+
+
+def close_android_lua_error_popup(android_poco):
+    """Lua Error 现场记录完成后点击原生确认按钮，避免弹窗阻塞后续流程。"""
+    try:
+        close_button = android_poco("android:id/button1")
+        if close_button.exists():
+            close_button.click()
+            print("已点击 Android Lua Error 弹窗关闭按钮：android:id/button1")
+            return True
+    except Exception as e:
+        print(f"点击 Android Lua Error 弹窗关闭按钮失败：{e}")
+    print("Android Lua Error 弹窗关闭按钮不存在：android:id/button1")
+    return False
+
+
+def check_lua_error_popup():
+    """只检测 Android 原生 Lua/Char Error 弹窗，存在则记录 message 文本和现场信息。"""
+    try:
+        android_poco = get_android_poco()
+        if not hierarchy_has_lua_error(android_poco.agent.hierarchy.dump()):
+            return False
+    except Exception as e:
+        print(f"Android 原生 Lua Error 弹窗检查失败：{e}")
         return False
 
     state_machine.capture_screen("lua_error_popup")
-    print("检测到 Lua Error / Char Error 报错弹窗")
+    print("检测到 Android 原生 Lua Error / Char Error 报错弹窗")
+    message_text = android_lua_error_message_text(android_poco)
+    if message_text:
+        print("====================== Android Lua Error message ======================")
+        print(message_text)
+        print("=======================================================================")
+        write_lua_error_message_log(message_text)
+    else:
+        print("Android Lua Error message 节点未读取到文本")
     print_latest_lua_error_log()
+    close_android_lua_error_popup(android_poco)
     return True
 
 
@@ -667,6 +380,11 @@ def is_theme_select_blocking():
     return any_path_exists(THEME_SELECT_BLOCKING_PATHS)
 
 
+def is_theme_select_open():
+    """判断 Lua 打开主题后是否真的弹出了选 bet 界面。"""
+    return any_path_exists(THEME_SELECT_BLOCKING_PATHS)
+
+
 def is_theme_home():
     """快速判断当前是否在主题 Home，用于避免只依赖点击返回值。"""
     return (
@@ -741,6 +459,112 @@ def wait_for_any_path(paths, timeout, interval=0.5):
     return False
 
 
+def social_machine_path_candidates():
+    """按配置机台优先，其余机台兜底的顺序返回社交主题机台节点。"""
+    if SOCIAL_THEME_MACHINE_INDEX in SOCIAL_MACHINE_INDEXES:
+        ordered_indexes = [SOCIAL_THEME_MACHINE_INDEX]
+    else:
+        print(f"社交主题机台序号无效，改用 0 号机台：{SOCIAL_THEME_MACHINE_INDEX}")
+        ordered_indexes = [0]
+
+    ordered_indexes.extend(
+        index
+        for index in SOCIAL_MACHINE_INDEXES
+        if index not in ordered_indexes
+    )
+    candidates = []
+    for index in ordered_indexes:
+        candidates.append(f"theme.machine_{index}")
+        candidates.append(f"theme.machine_alt_{index}")
+    return tuple(candidates)
+
+
+def click_first_available_path(paths, label):
+    """点击第一条存在的节点路径，用于社交主题中间页的可选分支。"""
+    for path in paths:
+        try:
+            if not path_exists(path):
+                continue
+            if game_actions.click(path, timeout=1):
+                print(f"{label} 点击成功：{path}")
+                return True
+        except Exception as e:
+            print(f"{label} 点击异常：{path} | {e}")
+    print(f"{label} 未找到可点击节点：{list(paths)}")
+    return False
+
+
+def click_social_role_confirm_if_present(timeout=SOCIAL_THEME_ROLE_CONFIRM_TIMEOUT):
+    """社交主题优先处理角色确认；等待不到时允许直接进入机台选择。"""
+    if wait_for_any_path(SOCIAL_ROLE_CONFIRM_PATHS, timeout=timeout, interval=0.3):
+        return click_first_available_path(SOCIAL_ROLE_CONFIRM_PATHS, "社交主题角色确认")
+    print(f"社交主题未出现角色确认，直接进入机台选择：wait={timeout}s")
+    return None
+
+
+def handle_social_theme_enter_flow(timeout=SOCIAL_THEME_FLOW_TIMEOUT):
+    """处理社交主题从选 bet 后额外出现的角色确认和机台选择流程。"""
+    global current_theme_is_social
+    end_time = time.time() + timeout
+    handled_social_step = False
+
+    while time.time() < end_time:
+        if is_theme_home() or is_theme_loading():
+            return True
+
+        if any_path_exists(SOCIAL_ROLE_CONFIRM_PATHS):
+            # 社交主题会先进入角色选择页，必须确认后才会展示机台列表。
+            handled_social_step = True
+            current_theme_is_social = True
+            if click_social_role_confirm_if_present(timeout=0.1) is False:
+                return False
+            sleep(0.5)
+            continue
+
+        if any_path_exists(SOCIAL_MACHINE_SELECT_PATHS):
+            # 机台节点可能比角色确认更早暴露，先补等角色确认；没有确认页时再直接选机台。
+            handled_social_step = True
+            current_theme_is_social = True
+            role_clicked = click_social_role_confirm_if_present()
+            if role_clicked:
+                sleep(0.5)
+                continue
+            if role_clicked is False:
+                return False
+            # 高级房进入后机台页可能先露节点但仍在 loading，先等界面稳定再点机台。
+            print(f"社交主题选择机台前等待 loading 过渡：{SOCIAL_THEME_BEFORE_MACHINE_CLICK_DELAY}s")
+            sleep(SOCIAL_THEME_BEFORE_MACHINE_CLICK_DELAY)
+            if not click_first_available_path(social_machine_path_candidates(), "社交主题机台选择"):
+                return False
+            return True
+
+        sleep(0.3)
+
+    if handled_social_step:
+        print("社交主题中间流程超时，可能停留在角色选择或机台选择界面")
+        return False
+    return True
+
+
+def handle_social_theme_return_flow(timeout=SOCIAL_THEME_RETURN_TIMEOUT):
+    """社交主题返回会先回机台选择页，需要再点一次关闭才会回到大厅。"""
+    end_time = time.time() + timeout
+    while time.time() < end_time:
+        if is_lobby_home():
+            return True
+
+        if any_path_exists(SOCIAL_MACHINE_SELECT_PATHS) or any_path_exists(SOCIAL_MACHINE_CLOSE_PATHS):
+            if click_first_available_path(SOCIAL_MACHINE_CLOSE_PATHS, "社交主题机台页关闭"):
+                sleep(0.5)
+                return True
+            return False
+
+        sleep(0.3)
+
+    print("社交主题返回后未等到机台选择页关闭按钮，交回行为树继续判断")
+    return True
+
+
 def resolve_cf_app_package():
     """优先使用环境变量包名，未配置时尝试读取当前前台游戏包名。"""
     env_package = os.environ.get("CF_APP_PACKAGE")
@@ -768,8 +592,10 @@ def restart_game():
         sleep(1)
         start_app(app_package)
         sleep(3)
+        reset_poco_connection("app restarted before launch confirm")
         click_launch_confirm_button(timeout=LAUNCH_CONFIRM_TIMEOUT)
         sleep(APP_RESTART_WAIT_SECONDS)
+        reset_poco_connection("app restarted before lobby wait")
         return wait_for_lobby(timeout=10)
     except Exception as e:
         print(f"重启游戏失败：{app_package} | {e}")
@@ -826,6 +652,7 @@ def create_theme_traversal_tree():
         open_theme_select=open_lobby_theme_select,
         click_high_enter=click_theme_high_enter_button,
         click_return_lobby=click_theme_return_button,
+        check_lua_error=check_lua_error_popup,
     )
     return ThemeTraversalTree(
         callbacks,
@@ -837,15 +664,40 @@ def create_theme_traversal_tree():
 
 
 def open_lobby_theme_select(theme_id):
-    """通过 Lua 打开主题选房界面；是否真正进入目标页由行为树继续验证。"""
+    """通过 Lua 打开主题选房界面；未弹出时按主题未配置状态处理。"""
     started_at = time.perf_counter()
-    game_actions.click_lobby_theme(theme_id)
+    lua_result = game_actions.click_lobby_theme(theme_id)
     perf_log(f"Lua打开主题选房完成 theme_id={theme_id}", started_at)
-    return True
+    # 主题 bet 界面打开后、高级房点击前先查一次 Lua Error，避免原生错误弹窗遮挡入口。
+    check_lua_error_popup()
+    if wait_for_any_path(
+        THEME_SELECT_BLOCKING_PATHS,
+        timeout=THEME_SELECT_OPEN_TIMEOUT,
+        interval=0.5,
+    ):
+        print(f"主题选 bet 界面已出现：theme_id={theme_id}")
+        return True
+
+    # 部分主题没有初始化配置时 Lua 不会弹选 bet 窗，仍停留大厅；这里显式返回失败让主流程跳过。
+    check_lua_error_popup()
+    current_state = state_machine.detect_state(verbose=True)
+    if is_lobby_home():
+        print(
+            f"主题选 bet 未弹出，按主题未配置跳过：theme_id={theme_id} "
+            f"state={current_state.name} lua_result={lua_result}"
+        )
+    else:
+        print(
+            f"主题选 bet 未弹出，当前状态非大厅：theme_id={theme_id} "
+            f"state={current_state.name} lua_result={lua_result}"
+        )
+    return False
 
 
 def enter_theme(theme_id):
     """进入主题：返回 success/no_config/enter_failed，便于主流程快速分流。"""
+    # 进入动作前优先处理 Android 原生 Lua Error，避免错误弹窗遮挡选房/进入按钮。
+    check_lua_error_popup()
     return create_theme_traversal_tree().enter_theme(theme_id, timeout=THEME_LOAD_TIMEOUT)
 
 
@@ -856,6 +708,10 @@ def click_theme_high_enter_button(timeout=THEME_SELECT_TIMEOUT):
         node = game_actions.node("theme.theme_high_enter_btn")
         if game_actions.wait_for_node(node, timeout=timeout):
             clicked = game_actions.click_node(node, timeout=2)
+            if clicked and not handle_social_theme_enter_flow():
+                print("高级房点击后社交主题进入流程处理失败")
+                perf_log("点击高级房按钮完成 result=False social_flow", started_at)
+                return False
             perf_log(f"点击高级房按钮完成 result={clicked}", started_at)
             return clicked
     except KeyError as e:
@@ -869,6 +725,10 @@ def click_theme_high_enter_button(timeout=THEME_SELECT_TIMEOUT):
         while datetime.now().timestamp() < end_time:
             if node.exists():
                 node.click()
+                if not handle_social_theme_enter_flow():
+                    print("高级房兜底点击后社交主题进入流程处理失败")
+                    perf_log("点击高级房按钮完成 result=False fallback social_flow", started_at)
+                    return False
                 print("点击高级房进入按钮成功：poco fallback")
                 perf_log("点击高级房按钮完成 result=True fallback", started_at)
                 return True
@@ -888,10 +748,7 @@ def prepare_lobby_for_theme(theme_id):
     if wait_for_lobby(timeout=LOBBY_PREPARE_TIMEOUT):
         return True
 
-    print(f"进入主题前未回到大厅，重启恢复后再继续：theme_id={theme_id}")
-    if restart_game() and wait_for_lobby(timeout=LOBBY_PREPARE_TIMEOUT):
-        return True
-
+    print(f"进入主题前未回到大厅，记录现场后跳过：theme_id={theme_id}")
     state_machine.dump_unknown(f"theme_{theme_id}_lobby_prepare_failed")
     return False
 
@@ -910,7 +767,6 @@ def quick_recover_blockers(max_tries=2):
                     sleep(0.2)
                     clicked = True
                     recovered = True
-                    break
             except Exception:
                 continue
         if not clicked:
@@ -940,19 +796,63 @@ def close_common_popups(max_tries=3):
 
 def close_theme_popups(theme_id):
     """进入主题后先清理弹窗，保证返回大厅按钮可以被点击。"""
+    # 关闭主题/返回大厅前优先记录并关闭 Lua Error，避免普通弹窗恢复误判。
+    check_lua_error_popup()
     if quick_recover_blockers(max_tries=4):
         print(f"已清理主题内弹窗：theme_id={theme_id}")
 
 
+def spin_before_return_lobby(theme_id, count=SPIN_BEFORE_RETURN_COUNT):
+    """返回大厅前先点击指定次数 spin，覆盖主题内基础转动流程。"""
+    completed = True
+    for index in range(1, count + 1):
+        # 每次点击后短暂等待，给 spin 按钮恢复可点和动画触发留出时间。
+        try:
+            clicked = game_actions.click("theme.theme_spin", timeout=3)
+        except Exception as e:
+            clicked = False
+            print(f"返回大厅前第 {index}/{count} 次 spin 异常：theme_id={theme_id} | {e}")
+
+        if clicked:
+            print(f"返回大厅前第 {index}/{count} 次 spin 成功：theme_id={theme_id}")
+        else:
+            print(f"返回大厅前第 {index}/{count} 次 spin 未点击成功：theme_id={theme_id}")
+            completed = False
+        sleep(SPIN_BEFORE_RETURN_INTERVAL)
+    return completed
+
+
 def return_to_lobby(theme_id):
-    """点击主题内返回大厅按钮，并用大厅关键节点确认返回成功。"""
-    return create_theme_traversal_tree().return_to_lobby(theme_id, timeout=LOBBY_RETURN_TIMEOUT)
+    """点击主题内返回大厅按钮；失败后清理一次现场并重试，减少残留页面影响下个主题。"""
+    attempts = max(1, LOBBY_RETURN_RETRY_COUNT + 1)
+    for attempt in range(1, attempts + 1):
+        if attempt > 1:
+            print(f"返回大厅第 {attempt}/{attempts} 次重试：theme_id={theme_id}")
+
+        if create_theme_traversal_tree().return_to_lobby(theme_id, timeout=LOBBY_RETURN_TIMEOUT):
+            return True
+
+        if is_lobby_home():
+            print(f"返回大厅重试前已检测到大厅：theme_id={theme_id}")
+            return True
+
+        if attempt < attempts:
+            # 返回失败时先清理一次可能遮挡返回按钮的弹窗，再重新走返回行为树。
+            print(f"返回大厅失败，清理阻塞后准备重试：theme_id={theme_id}")
+            check_lua_error_popup()
+            quick_recover_blockers(max_tries=THEME_POPUP_RECOVER_TRIES)
+            close_common_popups(max_tries=2)
+            sleep(LOBBY_RETURN_RETRY_DELAY)
+
+    return False
 
 
 def click_theme_return_button():
     """点击主题返回大厅按钮；节点配置不可用时使用同路径 Poco 兜底。"""
     try:
         if game_actions.click("theme.theme_enter_btn", timeout=5):
+            if current_theme_is_social:
+                return handle_social_theme_return_flow()
             return True
     except KeyError as e:
         print(f"主题返回按钮配置读取失败，尝试 Poco 兜底路径：{e}")
@@ -962,6 +862,8 @@ def click_theme_return_button():
         if node.exists():
             node.click()
             print("点击主题返回大厅按钮成功：poco fallback")
+            if current_theme_is_social:
+                return handle_social_theme_return_flow()
             return True
     except Exception as e:
         print(f"点击主题返回大厅按钮失败：{e}")
@@ -982,9 +884,11 @@ def write_theme_ids(filename_prefix, theme_ids, label):
 
 def traverse_theme_list(theme_ids, stay_seconds=DEFAULT_STAY_SECONDS):
     """按列表顺序遍历主题：记录准备大厅或进入主题失败的主题。"""
+    global current_theme_is_social
     failed_theme_ids = []
 
     for index, theme_id in enumerate(theme_ids, start=1):
+        current_theme_is_social = False
         theme_started_at = time.perf_counter()
         log(f"==== theme traversal {index}/{len(theme_ids)}: {theme_id} ====")
         perf_log(f"开始主题遍历 {index}/{len(theme_ids)} theme_id={theme_id}")
@@ -1001,24 +905,29 @@ def traverse_theme_list(theme_ids, stay_seconds=DEFAULT_STAY_SECONDS):
         enter_result = enter_theme(theme_id)
         perf_log(f"进入主题结束 theme_id={theme_id} result={enter_result}", enter_started_at)
         if enter_result == "no_config":
-            print(f"主题入口未出现，跳过：theme_id={theme_id}")
+            print(f"主题入口或选 bet 界面未出现，跳过：theme_id={theme_id}")
+            perf_log(f"结束主题遍历 theme_id={theme_id}", theme_started_at)
+            continue
+        if enter_result == "loading_stuck":
+            failed_theme_ids.append(theme_id)
+            print(f"主题 loading2 卡死，重启后继续下一个主题：theme_id={theme_id}")
+            restart_game()
             perf_log(f"结束主题遍历 theme_id={theme_id}", theme_started_at)
             continue
         if enter_result == "enter_failed":
             failed_theme_ids.append(theme_id)
-            restart_game()
             perf_log(f"结束主题遍历 theme_id={theme_id}", theme_started_at)
             continue
 
         if stay_seconds > 0:
             sleep_with_lua_error_check(stay_seconds)
         close_theme_popups(theme_id)
+        spin_before_return_lobby(theme_id)
 
         return_started_at = time.perf_counter()
         if not return_to_lobby(theme_id):
             perf_log(f"返回大厅失败 theme_id={theme_id}", return_started_at)
-            print(f"主题返回大厅失败，重启后继续下一个主题：theme_id={theme_id}")
-            restart_game()
+            print(f"主题返回大厅重试后仍失败，交给下一个主题的大厅准备检查：theme_id={theme_id}")
         else:
             perf_log(f"返回大厅完成 theme_id={theme_id}", return_started_at)
         perf_log(f"结束主题遍历 theme_id={theme_id}", theme_started_at)

@@ -23,6 +23,7 @@
 """
 from airtest.core.api import *  # Airtest 全局配置、日志初始化与设备连接
 from poco.drivers.std import StdPoco  # 标准 Poco 驱动，用于查询和操作游戏 UI 控件树
+from poco.drivers.android.uiautomation import AndroidUiautomationPoco  # Android 原生 UI 驱动，用于系统弹窗
 from airtest.core.cv import Template  # 业务脚本可复用的图片模板类型
 from airtest.cli.parser import cli_setup  # 命令行参数解析
 from airtest.core.android.adb import ADB  # 通过 adb 自动发现在线 Android 设备
@@ -42,6 +43,8 @@ DEVICE_MAP = {
     "dev2": "YOUR_DEV2_SERIAL",   # 开发机2
     "ci": "CI_DEVICE_SERIAL",     # CI/CD 环境设备
 }
+
+_android_poco = None
 
 # 降低第三方库日志噪音
 for logger_name in ["airtest", "root", "adb", "rotation", "nbsp", "touch_methods", "poco"]:
@@ -203,6 +206,23 @@ def init_poco(device, auto_refresh=True, refresh_rate=0.5):
     )
 
 
+def init_android_poco(device):
+    """初始化 Android 原生 Poco，用于识别系统 Toast/Alert/Dialog 等非游戏节点。"""
+    return AndroidUiautomationPoco(
+        device=device,
+        use_airtest_input=True,
+        screenshot_each_action=False,
+    )
+
+
+def get_android_poco():
+    """懒加载 Android 原生 Poco，避免普通游戏 UI 脚本导入时额外初始化。"""
+    global _android_poco
+    if _android_poco is None:
+        _android_poco = init_android_poco(dev)
+    return _android_poco
+
+
 def close_all_popups(poco, max_tries=3, interval=0.3):
     """关闭所有常见弹窗。
     
@@ -252,7 +272,8 @@ dev = init_device()
 poco = init_poco(dev, auto_refresh=False)
 
 # 导出公共接口
-__all__ = ["ST", "dev", "poco", "init_device", "init_poco", "resolve_serial",
+__all__ = ["ST", "dev", "poco", "init_device", "init_poco", "init_android_poco",
+           "get_android_poco", "resolve_serial",
            "list_connected_android_devices",
            "resolve_device_uri", "close_all_popups", "detect_platform", "DEVICE_MAP",
            "apply_serial_from_argv"]

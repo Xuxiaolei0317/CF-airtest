@@ -29,6 +29,7 @@ class ThemeTraversalCallbacks:
     open_theme_select: Callable[[int], bool]
     click_high_enter: Callable[[], bool]
     click_return_lobby: Callable[[], bool]
+    check_lua_error: Callable[[], bool]
 
 
 @dataclass
@@ -37,6 +38,9 @@ class GoalResult:
 
     status: BTStatus
     action_failed: bool = False
+    action_failed_reason: str = ""
+    action_succeeded: bool = False
+    wait_detected: bool = False
     attempts: int = 0
 
 
@@ -78,8 +82,15 @@ class ThemeTraversalTree:
             return "success"
 
         if result.action_failed:
-            self.callbacks.dump_unknown(f"theme_{theme_id}_high_enter_missing")
+            if result.action_failed_reason == "theme_select_missing":
+                self.callbacks.dump_unknown(f"theme_{theme_id}_select_popup_missing")
+            else:
+                self.callbacks.dump_unknown(f"theme_{theme_id}_high_enter_missing")
             return "no_config"
+
+        if result.wait_detected:
+            self.callbacks.dump_unknown(f"theme_{theme_id}_loading_stuck")
+            return "loading_stuck"
 
         self.callbacks.dump_unknown(f"theme_{theme_id}_enter_timeout")
         return "enter_failed"
@@ -96,7 +107,9 @@ class ThemeTraversalTree:
             success_on_recover=False,
         )
 
-        if result.status == BTStatus.SUCCESS:
+        if result.status == BTStatus.SUCCESS or result.action_succeeded:
+            if result.status != BTStatus.SUCCESS:
+                print(f"[THEME_BT] return action clicked, let next lobby check confirm: {theme_id}")
             return True
 
         if result.action_failed:
@@ -124,6 +137,8 @@ class ThemeTraversalTree:
         successful_actions = 0
         expected_since = None
         next_wait_log_at = 0
+        lua_error_checked_while_waiting = False
+        wait_detected = False
 
         while time.time() < end_time:
             now = time.time()
@@ -132,7 +147,11 @@ class ThemeTraversalTree:
                     expected_since = now
                 if now - expected_since >= self.expected_stable_seconds:
                     print(f"[THEME_BT] success: {name}")
-                    return GoalResult(BTStatus.SUCCESS, attempts=attempts)
+                    return GoalResult(
+                        BTStatus.SUCCESS,
+                        action_succeeded=successful_actions > 0,
+                        attempts=attempts,
+                    )
             else:
                 expected_since = None
 
@@ -140,7 +159,7 @@ class ThemeTraversalTree:
                 if success_on_recover and successful_actions > 0:
                     # 进入主题后能处理到主题内弹窗，说明已越过 loading，直接进入返回大厅流程。
                     print(f"[THEME_BT] success after popup recover: {name}")
-                    return GoalResult(BTStatus.SUCCESS, attempts=attempts)
+                    return GoalResult(BTStatus.SUCCESS, action_succeeded=True, attempts=attempts)
                 # 其他目标仍需重新验目标，不把刚才的点击结果直接当成功。
                 expected_since = None
                 next_action_at = now + self.action_retry_interval
@@ -150,6 +169,11 @@ class ThemeTraversalTree:
 
             if should_wait and successful_actions > 0 and should_wait():
                 # 进入动作已触发但 loading2 仍可见，说明主题还没真正进入；超时后记录失败主题。
+                wait_detected = True
+                if not lua_error_checked_while_waiting:
+                    # loading 等待期间优先查一次 Android 原生 Lua Error，避免错误弹窗被 loading 超时掩盖。
+                    self.callbacks.check_lua_error()
+                    lua_error_checked_while_waiting = True
                 if now >= next_wait_log_at:
                     print(f"[THEME_BT] still loading2: {name}")
                     next_wait_log_at = now + self.wait_log_interval
@@ -160,10 +184,22 @@ class ThemeTraversalTree:
             if now >= next_action_at and (retry_after_success or successful_actions == 0):
                 attempts += 1
                 print(f"[THEME_BT] action {attempts}: {name}")
-                if not action():
+                action_result = action()
+                action_failed_reason = ""
+                if isinstance(action_result, tuple):
+                    action_success, action_failed_reason = action_result
+                else:
+                    action_success = action_result
+
+                if not action_success:
                     print(f"[THEME_BT] action failed: {name}")
                     if fail_on_action_false and successful_actions == 0:
-                        return GoalResult(BTStatus.FAILURE, action_failed=True, attempts=attempts)
+                        return GoalResult(
+                            BTStatus.FAILURE,
+                            action_failed=True,
+                            action_failed_reason=action_failed_reason,
+                            attempts=attempts,
+                        )
                 else:
                     successful_actions += 1
                 next_action_at = now + self.action_retry_interval
@@ -172,7 +208,12 @@ class ThemeTraversalTree:
             sleep(self.interval)
 
         print(f"[THEME_BT] timeout: {name}")
-        return GoalResult(BTStatus.FAILURE, attempts=attempts)
+        return GoalResult(
+            BTStatus.FAILURE,
+            action_succeeded=successful_actions > 0,
+            wait_detected=wait_detected,
+            attempts=attempts,
+        )
 
     def _recover_if_blocked(self):
         """快速尝试关闭阻塞弹窗，避免完整状态机扫描拖慢主题等待。"""
@@ -190,8 +231,11 @@ class ThemeTraversalTree:
 
     def _click_theme_entry(self, theme_id):
         """打开主题选房并点击高级房，后续由行为树验证是否真的进入主题。"""
-        self.callbacks.open_theme_select(theme_id)
-        return self.callbacks.click_high_enter()
+        if not self.callbacks.open_theme_select(theme_id):
+            return False, "theme_select_missing"
+        if not self.callbacks.click_high_enter():
+            return False, "high_enter_missing"
+        return True, ""
 
     def _click_return_lobby(self, theme_id):
         """返回前先清理主题内弹窗，避免返回按钮被遮挡导致假点击。"""

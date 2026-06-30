@@ -98,6 +98,7 @@ CF / MT 节点引用统一约定：
 - 节点配置 API 只使用 `group.key` 点号路径，例如 `theme.theme_bet_label`、`main.footer_spin`。
 - `CF_nodes.py` / `MT_nodes.py` 的 `node_spec()`、`resolve_node()`、`node_text()` 都只接收点号路径，不再使用 `group, key` 两个参数。
 - 状态机 JSON 的 `features` 也只写点号路径字符串，不再写 `["group", "key"]` 数组。
+- 更新 `CF_nodes.json` / `MT_nodes.json` 中会影响页面识别的节点时，需要同步检查对应的 `CF_states.json` / `MT_states.json`，避免状态机仍引用旧节点。
 - `common_nodes` 只作为节点类入口，复杂流程脚本优先使用 `GameActions` 的点号路径方法。
 
 CF / MT 测试脚本优先使用 `GameActions` 的点号路径快捷入口：
@@ -110,16 +111,20 @@ bet_num = game_actions.extract_number(bet_text)
 
 ## CF 主题遍历脚本
 
-`CF/CF_theme_traversal.py` 用于遍历大厅主题列表。脚本会按主题 ID 顺序执行：先确认当前在大厅，再通过 `CF/CF_theme_traversal_tree.py` 的主题遍历行为树调用 Lua 打开主题选 bet 界面、点击高级房进入按钮，并验证是否进入主题；如果进入动作后能处理到主题内弹窗，也会直接判定为进入成功。进入主题后默认不额外停留，会快速清理遮挡弹窗、点击返回大厅按钮并验证是否真正回到 `LOBBY_HOME`，然后继续下一个主题。失败留证时再导出现场，便于定位卡在 loading 进不去的主题。
+`CF/CF_theme_traversal.py` 用于遍历大厅主题列表。脚本会按主题 ID 顺序执行：先确认当前在大厅，再优先检测 Android 原生 Lua Error 弹窗，然后通过 `CF/CF_theme_traversal_tree.py` 的主题遍历行为树调用 Lua 打开主题选 bet 界面；Lua 后会等待 `THEME_SELECT` 状态出现，如果选 bet 弹窗未出现且仍停留大厅，会按主题未配置跳过并导出 `select_popup_missing` 现场。bet 界面打开后、高级房点击前会再查一次 Lua Error，然后点击高级房进入按钮，并验证是否进入主题。社交主题从选 bet 进入后如果出现角色选择页，脚本会先点击角色确认按钮，再在机台选择页选择机台进入主题，默认选择 0 号机台。进入动作触发后如果停在 `loading2` 等待阶段，行为树会额外检测一次 Lua Error；如果进入动作后能处理到主题内弹窗，也会直接判定为进入成功。进入主题后默认不额外停留，关闭主题/返回大厅前会再次优先检测 Lua Error，然后快速清理遮挡弹窗、先点击 2 次主题内 `spin`，再点击返回大厅按钮并验证是否真正回到 `LOBBY_HOME`，然后继续下一个主题。失败留证时再导出现场，便于定位卡在 loading 进不去的主题。
 
 - 默认主题列表维护在脚本内 `THEME_IDS`。
 - 直接运行脚本时可以用 `--theme-ids 122,123`、`--theme-file theme_ids.txt` 或环境变量 `CF_THEME_IDS=122,123` 临时覆盖。
-- 如果 Lua 后没有高级房入口，脚本会打印该主题并直接继续下一个主题。
-- 如果主题进入超时，脚本会记录该主题 ID，重启游戏后继续验证下一个主题；默认超时 10 秒，可用 `CF_THEME_LOAD_TIMEOUT` 覆盖。
+- 如果 Lua 后没有弹出选 bet 界面，或选 bet 界面没有高级房入口，脚本会打印该主题并直接继续下一个主题。
+- 如果主题进入超时，脚本会记录该主题 ID 并继续后续流程；默认超时 10 秒，可用 `CF_THEME_LOAD_TIMEOUT` 覆盖。
+- 选 bet 界面弹出等待默认复用 `THEME_SELECT_TIMEOUT`，可用 `CF_THEME_SELECT_OPEN_TIMEOUT` 单独覆盖。
+- 社交主题会优先等待并点击角色确认，等待不到确认按钮时才直接选择机台；角色确认等待默认 3 秒，可用 `CF_SOCIAL_THEME_ROLE_CONFIRM_TIMEOUT` 覆盖。机台选择默认点击 0 号机台，可用 `CF_SOCIAL_THEME_MACHINE_INDEX=0..7` 覆盖；节点映射兼容 `machine_0 -> lobby_slot1` 到 `machine_7 -> lobby_slot8`，以及 `machine_alt_0 -> slot1` 到 `machine_alt_7 -> slot8`；高级房后进入机台选择页时默认等待 5 秒再点击机台，可用 `CF_SOCIAL_THEME_BEFORE_MACHINE_CLICK_DELAY` 覆盖；社交中间流程等待默认 8 秒，可用 `CF_SOCIAL_THEME_FLOW_TIMEOUT` 覆盖。
+- 社交主题从主题内点击返回大厅按钮后会先回到机台选择页，脚本会等待机台页并点击 `lobby.btn_close` 回大厅；等待默认 8 秒，可用 `CF_SOCIAL_THEME_RETURN_TIMEOUT` 覆盖。
+- 返回大厅失败后会先清理一次阻塞弹窗并重试，默认额外重试 1 次，可用 `CF_LOBBY_RETURN_RETRY_COUNT` 和 `CF_LOBBY_RETURN_RETRY_DELAY` 覆盖。
 - 运行日志会输出 `[PERF]` 耗时点，包括设备检测/Poco 初始化、准备大厅、开始执行进入主题、Lua 打开选房、高级房点击、进入主题结果和返回大厅耗时，便于定位界面卡帧或初始化耗时。
-- 每次触发进入主题前都会确认当前在大厅；大厅优先通过根节点 `LobbyScene`，并辅以设置/中部入口节点判断。如果不在大厅，会先清理通用弹窗，仍未恢复则重启游戏后继续。
-- `loading2` 只用于进入动作后的异常识别：如果主题 Home 未出现、主题内弹窗也处理不到，并且 `loading2` 一直可见到超时，就记录为进入失败主题。
-- 如需进入主题后停留并检查 Lua/Char Error，可通过 `--stay-seconds` 指定停留秒数；检测到时会保存截图并打印最近的 logcat 关键日志。
+- 每次触发进入主题前都会确认当前在大厅；大厅优先通过根节点 `LobbyScene`，并辅以设置/中部入口节点判断。如果不在大厅，会先清理通用弹窗，仍未恢复则只记录现场并跳过当前主题，不做冷重启。
+- `loading2` 只用于进入动作后的异常识别：如果主题 Home 未出现、主题内弹窗也处理不到，并且 `loading2` 一直可见到超时，就记录为进入失败主题并重启游戏。应用冷重启后会重建游戏 Poco 连接并同步给节点、动作和状态机，避免旧 RPC 管道出现 `Broken pipe` 后影响后续检查。
+- 如需进入主题后停留并检查 Lua/Char Error，可通过 `--stay-seconds` 指定停留秒数；检测时只通过 `airtest_booststrap.py` 的 Android 原生 Poco 识别系统弹窗，命中后保存截图、打印 `android:id/message` 文本、写入 `log/theme_traversal/lua_error_message_*.txt`、输出最近的 logcat 关键日志，并点击 `android:id/button1` 关闭弹窗。
 - 进入失败记录输出到 `log/theme_traversal/failed_theme_ids_*.txt`。
 - 重启游戏优先使用 `CF_APP_PACKAGE`；未设置时会尝试读取当前前台应用包名，兜底值为 `slots.pcg.casino.games.free.android`。重启后如果停在 debug 启动页，脚本默认按横屏坐标使用 `CF_LAUNCH_CONFIRM_TAP=0.500,0.940` 点击居中靠下的 Confirm，避免启动页图片误识别；坐标不准时可通过环境变量覆盖。
 
@@ -136,7 +141,7 @@ bet_num = game_actions.extract_number(bet_text)
 
 ## 新脚本初始化方式
 
-后续新增自动化脚本统一复用 `airtest_booststrap.py` 中的设备连接、Airtest 参数和 Poco 初始化配置。直接导入时会自动连接设备并初始化 `poco`；需要指定设备时，可先设置 `ANDROID_SERIAL`，或通过 `run_tests.py --serial` 传入。
+后续新增自动化脚本统一复用 `airtest_booststrap.py` 中的设备连接、Airtest 参数和 Poco 初始化配置。直接导入时会自动连接设备并初始化游戏控件树 `poco`；需要识别 Android 原生弹窗时调用 `get_android_poco()` 懒加载原生 UIAutomator Poco。需要指定设备时，可先设置 `ANDROID_SERIAL`，或通过 `run_tests.py --serial` 传入。
 
 ```python
 import sys

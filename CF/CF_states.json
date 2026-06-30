@@ -8,6 +8,7 @@
       "common.close_btn",
       "common.btn_confirm",
       "common.mask_close",
+      "common.btn_collect",
       "cashgo.btn_close",
       "cashgo.build_finish_dialog",
       "cashgo.build_chest_dialog"
@@ -16,43 +17,43 @@
   "THEME_HOME": {
     "desc": "主题主界面",
     "priority": 90,
-    "min_hits": 1,
+    "min_hits": 2,
     "features": [
+      "theme.theme_enter_btn",
+      "theme.theme_spin",
       "theme.theme_sub_btn",
       "theme.theme_add_btn",
       "theme.theme_bet_label",
       "theme.theme_label_win"
     ]
   },
-  "CASH_GO_OOC": {
-    "desc": "Cash Go 金币不足或商店购买界面",
-    "priority": 90,
-    "min_hits": 1,
-    "features": [
-      "cashgo.ooc_popup",
-      "cashgo.shop_price_9999",
-      "cashgo.buy_btn",
-      "cashgo.prize_label"
-    ]
-  },
-  "CASH_GO_COMPLETE": {
-    "desc": "Cash Go 小岛完成或奖励可领取",
+  "THEME_SELECT": {
+    "desc": "主题选 bet 界面",
     "priority": 80,
     "min_hits": 1,
     "features": [
-      "cashgo.share_btn",
-      "cashgo.collect_btn"
+      "theme.theme_regular_enter_btn",
+      "theme.theme_high_enter_btn",
+      "theme.theme_touch_node"
     ]
   },
-  "CASH_GO_BUILD": {
-    "desc": "Cash Go 建造界面",
-    "priority": 70,
+  "THEME_SOCIAL_ROLE_SELECT": {
+    "desc": "社交主题角色选择界面",
+    "priority": 79,
     "min_hits": 1,
     "features": [
-      "cashgo.build_btn",
-      "cashgo.build_progress_label",
-      "cashgo.spin_btn",
-      "cashgo.build_tab_btn"
+      "theme.btn_node"
+    ]
+  },
+  "THEME_SOCIAL_MACHINE_SELECT": {
+    "desc": "社交主题机台选择界面",
+    "priority": 78,
+    "min_hits": 1,
+    "features": [
+      "theme.enmoji_btn",
+      "theme.emoji_btn",
+      "theme.machine",
+      "theme.machine_alt"
     ]
   },
   "LOBBY_HOME": {
@@ -60,12 +61,15 @@
     "priority": 50,
     "min_hits": 2,
     "features": [
-      "lobby.root",
+      "lobby.LobbyScene",
+      "lobby.btn_swallow_bottom",
       "lobby.cash_go",
       "lobby.setting",
       "lobby.middle",
       "lobby.b_default",
-      "lobby.mansion"
+      "lobby.mansion",
+      "lobby.eao",
+      "lobby.btn_touch"
     ]
   }
 }
