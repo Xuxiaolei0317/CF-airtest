@@ -40,25 +40,119 @@ cf-airtest/
 │   ├── MT_quest_test.py         # MT 任务测试
 │   ├── MT_state_machine.py      # MT 状态机流程
 │   └── MT_state_demo.py         # MT 状态机示例
+├── cocos2dx-lua/                  # Cocos2d-x Lua Poco SDK 接入文件
+│   ├── README.md                  # SDK 接入说明
+│   ├── DEBUG_CLICK_LOGGER.md      # 点击节点调试日志说明
+│   └── poco/                      # 游戏工程内接入的 Poco Lua SDK
 └── log/                         # Airtest 日志
 ```
 
 ## 快速开始
 
-### 1. 安装依赖
+### 1. 安装 Python
+
+推荐使用 Python 3.10 或 Python 3.11。Airtest、Poco、OpenCV 等自动化依赖对较新的 Python 版本可能存在兼容差异，不建议直接使用 Python 3.13/3.14。
 
 ```bash
+python --version
+# 或
+python3 --version
+```
+
+### 2. 创建虚拟环境
+
+建议在项目根目录创建独立虚拟环境，避免和本机其他 Python 项目的依赖冲突。
+
+```bash
+cd cf-airtest
+python3 -m venv .venv
+```
+
+macOS / Linux 激活方式：
+
+```bash
+source .venv/bin/activate
+```
+
+Windows 激活方式：
+
+```bash
+.venv\Scripts\activate
+```
+
+### 3. 安装 Python 依赖
+
+```bash
+pip install --upgrade pip
 pip install -r requirements.txt
 ```
 
-### 2. 连接设备
+项目依赖主要包括：
+
+- `airtest`：Airtest 自动化框架，用于设备连接、截图、点击和图像识别。
+- `pocoui` / `pocosdk`：Poco 控件树访问能力，用于读取和操作游戏 UI 节点。
+- `opencv-python` / `numpy` / `Pillow`：图像识别和截图处理依赖。
+- `requests`：HTTP 请求工具库。
+- `pytest` / `pytest-html` / `allure-pytest`：测试执行和报告生成依赖。
+
+安装完成后可以用下面命令快速验证 Python 依赖是否可用：
+
+```bash
+python -c "import airtest; import poco; import cv2; print('env ok')"
+```
+
+### 4. 安装 ADB
+
+Android 自动化需要本机可用 `adb` 命令。
+
+macOS 可通过 Homebrew 安装：
+
+```bash
+brew install android-platform-tools
+```
+
+Windows 可安装 Android SDK Platform Tools，并将 `adb.exe` 所在目录加入系统环境变量 `PATH`。
+
+安装后检查：
+
+```bash
+adb version
+adb devices
+```
+
+### 5. 连接设备
+
+Android 设备需要开启开发者选项和 USB 调试，并在首次连接时允许当前电脑调试。
 
 ```bash
 # 设置设备序列号或别名 (可选；只连接一台 Android 设备时会自动检测)
 export ANDROID_SERIAL=YOUR_DEVICE_ID
 ```
 
-### 3. 运行测试
+Windows 可使用：
+
+```bash
+set ANDROID_SERIAL=YOUR_DEVICE_ID
+```
+
+如果 `adb devices` 能看到设备状态为 `device`，说明设备连接正常。多台设备在线时，需要通过 `ANDROID_SERIAL` 或 `--serial` 指定目标设备。
+
+被测游戏包需要开启 Poco SDK，否则 Airtest 可以连接设备，但脚本无法读取游戏 UI 控件树。CF / MT 项目请使用最新 debug 包，启动页勾选 Poco debug 按钮后再进入游戏。
+
+### 6. 接入 Cocos2d-x Lua Poco SDK
+
+当前仓库保留了一份已接入使用的 Cocos2d-x Lua Poco SDK 文件，位于 `cocos2dx-lua/poco/`。如果游戏工程需要补齐或对齐 Poco SDK，可将该目录作为整体放入游戏工程的 Lua 代码路径，并在测试包或 debug 包启动阶段初始化：
+
+```lua
+local PocoManager = require("poco.poco_manager")
+PocoManager:init_server(15004)
+```
+
+如果游戏工程不能直接使用 `require`，请改用项目内的 Lua 加载接口，例如 `libFile.loadSrcCode("poco.poco_manager")` 或对应的斜杠路径。SDK 默认监听 `15004` 端口，Airtest/Poco 连接游戏控件树时会通过该端口读取节点、截图和屏幕尺寸等信息。
+
+该 SDK 版本记录在 `cocos2dx-lua/poco/POCO_SDK_VERSION.lua`。当前版本额外包含 `RunLua` RPC 能力，只允许在 `bole.isPocoPackage` 或 `appDebugMode == true` 时执行，避免正式包误开放 Lua 执行入口。
+
+### 7. 运行测试
 
 ```bash
 # 列出所有可用测试
@@ -124,7 +218,7 @@ bet_num = game_actions.extract_number(bet_text)
 - 运行日志会输出 `[PERF]` 耗时点，包括设备检测/Poco 初始化、准备大厅、开始执行进入主题、Lua 打开选房、高级房点击、进入主题结果和返回大厅耗时，便于定位界面卡帧或初始化耗时。
 - 每次触发进入主题前都会确认当前在大厅；大厅优先通过根节点 `LobbyScene`，并辅以设置/中部入口节点判断。如果不在大厅，会先清理通用弹窗，仍未恢复则只记录现场并跳过当前主题，不做冷重启。
 - `loading2` 只用于进入动作后的异常识别：如果主题 Home 未出现、主题内弹窗也处理不到，并且 `loading2` 一直可见到超时，就记录为进入失败主题并重启游戏。应用冷重启后会重建游戏 Poco 连接并同步给节点、动作和状态机，避免旧 RPC 管道出现 `Broken pipe` 后影响后续检查。
-- 如需进入主题后停留并检查 Lua/Char Error，可通过 `--stay-seconds` 指定停留秒数；检测时只通过 `airtest_booststrap.py` 的 Android 原生 Poco 识别系统弹窗，命中后保存截图、打印 `android:id/message` 文本、写入 `log/theme_traversal/lua_error_message_*.txt`、输出最近的 logcat 关键日志，并点击 `android:id/button1` 关闭弹窗。
+- 如需进入主题后停留并检查 Lua/Char Error，可通过 `--stay-seconds` 指定停留秒数；检测时只通过 `airtest_booststrap.py` 的 Android 原生 Poco 识别系统弹窗，命中后保存截图、打印 `android:id/message` 文本、写入 `log/theme_traversal/lua_error_message_*.txt`（文件头会附带对应截图路径）、输出最近的 logcat 关键日志，并点击 `android:id/button1` 关闭弹窗。
 - 进入失败记录输出到 `log/theme_traversal/failed_theme_ids_*.txt`。
 - 重启游戏优先使用 `CF_APP_PACKAGE`；未设置时会尝试读取当前前台应用包名，兜底值为 `slots.pcg.casino.games.free.android`。重启后如果停在 debug 启动页，脚本默认按横屏坐标使用 `CF_LAUNCH_CONFIRM_TAP=0.500,0.940` 点击居中靠下的 Confirm，避免启动页图片误识别；坐标不准时可通过环境变量覆盖。
 

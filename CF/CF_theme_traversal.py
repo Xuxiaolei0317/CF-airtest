@@ -251,11 +251,16 @@ def android_lua_error_message_text(android_poco):
     return ""
 
 
-def write_lua_error_message_log(message_text):
+def write_lua_error_message_log(message_text, screenshot_path=None):
     """把 Android 原生 Lua Error 的 message 原文落盘，方便批量遍历后回查。"""
     RESULT_DIR.mkdir(parents=True, exist_ok=True)
     log_path = RESULT_DIR / f"lua_error_message_{datetime.now().strftime('%Y%m%d_%H%M%S')}.txt"
-    log_path.write_text(message_text, encoding="utf-8")
+    screenshot_line = screenshot_path or "截图保存失败或未生成"
+    # 日志顶部带上对应截图路径，批量遍历后可以直接定位弹窗现场。
+    log_path.write_text(
+        f"screenshot_path: {screenshot_line}\n\n{message_text}",
+        encoding="utf-8",
+    )
     print(f"Android Lua Error message 记录：{log_path}")
     return log_path
 
@@ -284,14 +289,14 @@ def check_lua_error_popup():
         print(f"Android 原生 Lua Error 弹窗检查失败：{e}")
         return False
 
-    state_machine.capture_screen("lua_error_popup")
+    screenshot_path = state_machine.capture_screen("lua_error_popup")
     print("检测到 Android 原生 Lua Error / Char Error 报错弹窗")
     message_text = android_lua_error_message_text(android_poco)
     if message_text:
         print("====================== Android Lua Error message ======================")
         print(message_text)
         print("=======================================================================")
-        write_lua_error_message_log(message_text)
+        write_lua_error_message_log(message_text, screenshot_path)
     else:
         print("Android Lua Error message 节点未读取到文本")
     print_latest_lua_error_log()
