@@ -7,10 +7,12 @@ Airtest 自动化测试框架，基于 Cocos2d-x 多平台游戏开发。
 ```
 cf-airtest/
 ├── README.md                    # 项目说明文档
-├── __init__.py
 ├── airtest_booststrap.py        # Airtest/Poco 公共初始化配置
 ├── run_tests.py                 # 统一测试入口
 ├── requirements.txt             # Python 依赖
+├── docs/                        # 工程规范和补充文档
+│   └── project_conventions.md   # 项目结构/命名/入口约定
+├── testlists/                   # 业务测试点清单（批量执行编排）
 ├── node_generator_web.py        # 本地 Poco 节点生成网页工具
 ├── poco_node_listener_web.py    # PocoDebug 点击日志网页监听工具
 ├── node_dumps/                  # Poco 节点转储数据
@@ -135,7 +137,7 @@ Windows 可使用：
 set ANDROID_SERIAL=YOUR_DEVICE_ID
 ```
 
-如果 `adb devices` 能看到设备状态为 `device`，说明设备连接正常。多台设备在线时，需要通过 `ANDROID_SERIAL` 或 `--serial` 指定目标设备。
+如果 `adb devices` 能看到设备状态为 `device`，说明设备连接正常。多台设备在线时，需要通过 `ANDROID_SERIAL` 或 `--serial` 指定目标设备。运行入口未检测到在线设备时会直接提示连接和授权检查项，并以失败码退出，不再输出完整 traceback。
 
 被测游戏包需要开启 Poco SDK，否则 Airtest 可以连接设备，但脚本无法读取游戏 UI 控件树。CF / MT 项目请使用最新 debug 包，启动页勾选 Poco debug 按钮后再进入游戏。
 
@@ -154,6 +156,9 @@ PocoManager:init_server(15004)
 
 ### 7. 运行测试
 
+团队默认使用 `run_tests.py` 作为统一入口（单模块、批量 testlist、CI 都从该入口触发）。  
+业务脚本中的 `if __name__ == "__main__"` 主要用于开发期本地调试，不作为团队规范执行方式。
+
 ```bash
 # 列出所有可用测试
 python run_tests.py --list
@@ -167,6 +172,15 @@ python run_tests.py --game cf --module CashGo
 # 运行 CF 主题遍历脚本；主题列表可在脚本 THEME_IDS 中维护
 python run_tests.py --game cf --module theme_traversal
 
+# 按测试清单批量执行（支持 .json/.yaml）
+python run_tests.py --testlist testlists/smoke.json
+
+# 仅校验测试清单结构（不执行）
+python run_tests.py --testlist testlists/smoke.json --validate-testlist
+
+# 批量执行遇到失败立即停止
+python run_tests.py --testlist testlists/smoke.json --stop-on-fail
+
 # 指定设备序列号
 python run_tests.py --serial YOUR_DEVICE_ID
 
@@ -176,6 +190,44 @@ python MT/MT_test.py --serial YOUR_DEVICE_ID
 # 直接运行 CF 主题遍历脚本时，可临时覆盖主题列表和停留时长
 python CF/CF_theme_traversal.py --theme-ids 122,123,124 --stay-seconds 15
 ```
+
+### 测试清单（testlist）批量执行
+
+`run_tests.py` 支持通过测试清单一次编排多个模块脚本，适合你按“业务测试点清单”做批量回归。当前支持 `.json/.yaml` 两种格式：
+
+```json
+{
+  "name": "基础冒烟清单",
+  "tests": [
+    {
+      "id": "cf_theme_traversal_smoke",
+      "game": "cf",
+      "module": "theme_traversal",
+      "enabled": true,
+      "serial": "R5CYA29D4SP",
+      "note": "可选：备注说明"
+    }
+  ]
+}
+```
+
+字段约定：
+
+- `name`：清单名称（可选，不填默认使用文件名）
+- `tests`：测试条目数组（必填）
+- `id`：条目唯一标识（必填，不能重复）
+- `game`：目标游戏（必填，仅支持 `cf` / `mt`）
+- `module`：模块名（必填，规则与 `--module` 一致）
+- `enabled`：是否执行（可选，默认 `true`）
+- `serial`：设备序列号（可选，单条覆盖）
+- `note`：备注（可选）
+
+校验与报告：
+
+- 使用 `--validate-testlist` 时只做结构校验，不执行脚本。
+- 运行后会在 `log/testlist_reports/` 生成 JSON 汇总，包含通过/失败统计和每条执行结果，便于后续 AI 分析接入。
+
+更多结构和命名规范见：`docs/project_conventions.md`。
 
 ## 节点与脚本分层
 
@@ -193,6 +245,7 @@ CF / MT 节点引用统一约定：
 - `CF_nodes.py` / `MT_nodes.py` 的 `node_spec()`、`resolve_node()`、`node_text()` 都只接收点号路径，不再使用 `group, key` 两个参数。
 - 状态机 JSON 的 `features` 也只写点号路径字符串，不再写 `["group", "key"]` 数组。
 - 更新 `CF_nodes.json` / `MT_nodes.json` 中会影响页面识别的节点时，需要同步检查对应的 `CF_states.json` / `MT_states.json`，避免状态机仍引用旧节点。
+- CF 状态机的阻塞弹窗状态按场景拆分：`POPUP_BLOCKING` 仅放通用 `common.*` 节点，`CASHGO_POPUP_BLOCKING` 放 Cash Go 专属节点，避免通用恢复逻辑误判。
 - `common_nodes` 只作为节点类入口，复杂流程脚本优先使用 `GameActions` 的点号路径方法。
 
 CF / MT 测试脚本优先使用 `GameActions` 的点号路径快捷入口：

@@ -1,3 +1,17 @@
-# Generated dump and screenshot artifacts
+# macOS / Python local artifacts
+.DS_Store
+**/.DS_Store
+__pycache__/
+**/__pycache__/
+*.py[cod]
+
+# Local virtual env / IDE cache
+.venv/
+.pytest_cache/
+
+# Generated runtime artifacts
 /node_dumps/
 /CF/screenshots/
+/CF/log/
+/MT/log/
+/log/testlist_reports/

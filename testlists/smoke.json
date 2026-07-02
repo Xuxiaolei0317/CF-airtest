@@ -1,0 +1,19 @@
+{
+  "name": "基础冒烟清单",
+  "tests": [
+    {
+      "id": "cf_theme_traversal_smoke",
+      "game": "cf",
+      "module": "theme_traversal",
+      "enabled": true,
+      "note": "CF 主题遍历冒烟验证"
+    },
+    {
+      "id": "mt_main_smoke",
+      "game": "mt",
+      "module": "main",
+      "enabled": false,
+      "note": "默认先禁用，按需开启"
+    }
+  ]
+}
