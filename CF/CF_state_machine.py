@@ -46,6 +46,7 @@ def _safe_filename(value):
 
 class CFStateMachine:
     """基于节点特征的 CF 最小可用状态机。"""
+    BLOCKING_STATES = {"POPUP_BLOCKING", "CASHGO_POPUP_BLOCKING"}
 
     def __init__(self, config_path=STATES_CONFIG_PATH, poco_driver=None):
         self.config_path = Path(config_path)
@@ -118,16 +119,24 @@ class CFStateMachine:
     def recover_blockers(self, max_tries=3):
         """处理通用弹窗/遮罩，返回是否处理过阻塞。"""
         recovered = False
-        blocker_actions = (
-            "common.btn_close",
-            "common.close_btn",
-            "common.mask_close",
-            "common.btn_collect",
-        )
+        # 按状态拆分弹窗恢复动作，避免把 Cash Go 专属弹窗和通用弹窗混在一起导致识别命中但无法恢复。
+        blocker_actions_by_state = {
+            "POPUP_BLOCKING": (
+                "common.btn_close",
+                "common.close_btn",
+                "common.btn_confirm",
+                "common.mask_close",
+                "common.btn_collect",
+            ),
+            "CASHGO_POPUP_BLOCKING": (
+                "cashgo.btn_close",
+            ),
+        }
 
         for _ in range(max_tries):
             state = self.detect_state()
-            if state.name != "POPUP_BLOCKING":
+            blocker_actions = blocker_actions_by_state.get(state.name)
+            if not blocker_actions:
                 break
 
             clicked = False
@@ -155,7 +164,7 @@ class CFStateMachine:
             state = self.detect_state(verbose=True)
             if state.name in expected_states:
                 return state
-            if recover and state.name == "POPUP_BLOCKING":
+            if recover and state.name in self.BLOCKING_STATES:
                 self.recover_blockers()
             sleep(interval)
 

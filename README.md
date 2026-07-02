@@ -245,6 +245,7 @@ CF / MT 节点引用统一约定：
 - `CF_nodes.py` / `MT_nodes.py` 的 `node_spec()`、`resolve_node()`、`node_text()` 都只接收点号路径，不再使用 `group, key` 两个参数。
 - 状态机 JSON 的 `features` 也只写点号路径字符串，不再写 `["group", "key"]` 数组。
 - 更新 `CF_nodes.json` / `MT_nodes.json` 中会影响页面识别的节点时，需要同步检查对应的 `CF_states.json` / `MT_states.json`，避免状态机仍引用旧节点。
+- CF 状态机的阻塞弹窗状态按场景拆分：`POPUP_BLOCKING` 仅放通用 `common.*` 节点，`CASHGO_POPUP_BLOCKING` 放 Cash Go 专属节点，避免通用恢复逻辑误判。
 - `common_nodes` 只作为节点类入口，复杂流程脚本优先使用 `GameActions` 的点号路径方法。
 
 CF / MT 测试脚本优先使用 `GameActions` 的点号路径快捷入口：

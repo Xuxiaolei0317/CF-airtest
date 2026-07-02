@@ -152,7 +152,8 @@ def create_cashgo_tree():
             Sequence(
                 "handle_popup",
                 [
-                    Condition("is_popup", state_is("POPUP_BLOCKING")),
+                    # Cash Go 流程既会遇到通用弹窗，也会遇到玩法内专属弹窗。
+                    Condition("is_popup", state_is("POPUP_BLOCKING", "CASHGO_POPUP_BLOCKING")),
                     Action("recover_popup", handle_popup),
                 ],
             ),

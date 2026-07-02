@@ -8,7 +8,14 @@
       "common.close_btn",
       "common.btn_confirm",
       "common.mask_close",
-      "common.btn_collect",
+      "common.btn_collect"
+    ]
+  },
+  "CASHGO_POPUP_BLOCKING": {
+    "desc": "Cash Go 专属弹窗阻塞",
+    "priority": 95,
+    "min_hits": 1,
+    "features": [
       "cashgo.btn_close",
       "cashgo.build_finish_dialog",
       "cashgo.build_chest_dialog"
